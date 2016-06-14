@@ -24,6 +24,10 @@ Sample akka-http seed project, ready for packaging with docker.
  
   Download at [http://www.scala-sbt.org/download.html](http://www.scala-sbt.org/download.html)
 
+- AWS Configuration
+
+  This application uses [AWS SQS](https://aws.amazon.com/sqs/) so it expects to find aws configuration and credentials in the usual locations (e.g. `~/.aws/credentials` and `~/.aws/config` on linux)
+
 - Intellij IDEA Community Edition
 
   Download at [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
@@ -47,6 +51,14 @@ Once the intellij project is created, you need to define how you will run it:
 - Click the green cross on the top left corner
 - Select `SBT Task` and create a `run` task, as per the following image:
 - ![img](http://i.imgur.com/kOss71d.png)
+
+## Application
+
+You'll need to change some configuration in `src/main/resources/application.conf`, namely:
+
+- your queue name i
+
+
 
 ## Docker packaging
 

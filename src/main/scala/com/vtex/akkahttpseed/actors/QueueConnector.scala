@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 
 import scala.concurrent.Future
-
+import scala.concurrent.duration._
 /**
   * Created by felipe on 12/06/16.
   */
@@ -16,6 +16,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
+  implicit val timeout = Timeout(10.seconds)
 
   def receive = {
 

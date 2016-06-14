@@ -20,7 +20,6 @@ class StockRoutes(stockPriceConnector: ActorRef)(implicit system: ActorSystem) {
       getRandomDailyQuote(ticker)
     }
   }
-
   private def getRandomDailyQuote(ticker: String) = {
     val tickerUpper = ticker.toUpperCase
     complete {

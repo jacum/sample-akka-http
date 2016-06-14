@@ -1,4 +1,4 @@
-# akka-http-docker-seed
+# akka-http-scala-docker-seed
 Sample akka-http seed project, ready for packaging with docker.
 
 ## To run this on your machine, you'll need:

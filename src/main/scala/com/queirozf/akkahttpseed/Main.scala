@@ -12,6 +12,8 @@ object Main extends App{
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(system))
   implicit val ec = system.dispatcher
 
+
+
   val sqsConnector = system.actorOf
 
 }

@@ -22,7 +22,7 @@ Sample akka-http seed project, ready for packaging with docker.
 
 - SBT (Scala Build Tool)
  
-  Download at [http://www.scala-sbt.org/download.html](http://www.scala-sbt.org/download.html)
+  Download at [http://www.scala-sbt.org/download.html](http://www.scala-sbt.org/download.html) and optionally add it to your `PATH` environment variable.
 
 - AWS Configuration
 

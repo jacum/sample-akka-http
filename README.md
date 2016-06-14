@@ -1,10 +1,6 @@
 # akka-http-docker-seed
 Sample akka-http seed project, ready for packaging with docker.
 
-## Contents
-
-
-
 ## To run this on your machine, you'll need:
 
 - Git

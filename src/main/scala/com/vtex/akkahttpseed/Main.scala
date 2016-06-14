@@ -1,4 +1,4 @@
-package com.queirozf.akkahttpseed
+package com.vtex.akkahttpseed
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializerSettings, ActorMaterializer}

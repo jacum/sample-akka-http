@@ -1,4 +1,4 @@
-package com.queirozf.akkahttpseed.models
+package com.vtex.akkahttpseed.models
 
 /**
   * Created by felipe on 14/06/16.

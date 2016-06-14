@@ -1,4 +1,4 @@
-package com.queirozf.akkahttpseed.actors
+package com.vtex.akkahttpseed.actors
 
 import akka.actor.{Actor, ActorLogging}
 import akka.pattern.pipe

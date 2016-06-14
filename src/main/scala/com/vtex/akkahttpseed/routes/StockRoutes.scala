@@ -1,12 +1,12 @@
-package com.queirozf.akkahttpseed.routes
+package com.vtex.akkahttpseed.routes
 
 import akka.actor.{ActorSystem, ActorRef}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.pattern.ask
-import com.queirozf.akkahttpseed.actors.StockPriceConnector
-import com.queirozf.akkahttpseed.models.DailyQuote
+import com.vtex.akkahttpseed.actors.StockPriceConnector
+import com.vtex.akkahttpseed.models.DailyQuote
 
 /**
   * Created by felipe on 14/06/16.

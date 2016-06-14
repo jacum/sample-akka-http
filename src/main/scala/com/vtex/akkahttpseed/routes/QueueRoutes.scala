@@ -1,11 +1,11 @@
-package com.queirozf.akkahttpseed.routes
+package com.vtex.akkahttpseed.routes
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.pattern.ask
-import com.queirozf.akkahttpseed.actors.QueueConnector
+import com.vtex.akkahttpseed.actors.QueueConnector
 
 /**
   * Created by felipe on 13/06/16.

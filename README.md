@@ -1,7 +1,7 @@
 # akka-http-scala-docker-seed
 Sample akka-http seed project, ready for packaging with docker.
 
-## To run this on your machine, you'll need:
+## Prerequisites
 
 - Git
 
@@ -28,7 +28,9 @@ Sample akka-http seed project, ready for packaging with docker.
 
   Download at [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
-## Creating Intellij Project
+## Installation & Running
+
+#### Creating Intellij Project
 
 > When opening Intellij for the first time, check the `Scala Plugin` option so it gets downloaded too
 
@@ -39,7 +41,7 @@ Sample akka-http seed project, ready for packaging with docker.
 - Check `"Sources"` and `"Sources for SBT and plugins`" unless your connection is poor
 - ![intellij](http://i.imgur.com/mOxeZdVg.png)
 
-## Run configuration
+#### Run configuration
 
 Once the intellij project is created, you need to define how you will run it:
 
@@ -48,16 +50,16 @@ Once the intellij project is created, you need to define how you will run it:
 - Select `SBT Task` and create a `run` task, as per the following image:
 - ![img](http://i.imgur.com/kOss71d.png)
 
-## Application
+#### Application configuration
 
 You'll need to change some configuration in `src/main/resources/application.conf`, namely:
 
-- your queue name i
+- your queue name in SQS
+- the api key for using the stock quote API (use what's been given to you or get a new one at [https://www.quandl.com/users/login](https://www.quandl.com/users/login))
 
 
-
-## Docker packaging
+### Docker packaging
 
 This application uses [sbt-native-packager](https://github.com/sbt/sbt-native-packager) which provides a docker plugin to package sbt projects.
 
-Just run 
+Just run `sbt docker:publishLocal` at your project root.

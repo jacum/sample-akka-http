@@ -28,6 +28,10 @@ Sample akka-http seed project, ready for packaging with docker.
 
   Download at [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
+- A REST API client
+
+  We suggest Postman. [Chrome-plugin](https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?hl=en)
+
 ## Installation & Running
 
 #### Creating Intellij Project

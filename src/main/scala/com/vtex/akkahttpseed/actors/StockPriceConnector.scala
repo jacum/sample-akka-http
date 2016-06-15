@@ -11,6 +11,7 @@ import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
 
 import scala.concurrent.Future
+import scala.util.{Try, Success, Failure}
 
 /**
   * Created by felipe on 12/06/16.
@@ -34,7 +35,7 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
   }
 
-  private def getSingleQuote(ticker: String, day: Int, month: Int, year: Int): Future[Option[DailyQuoteResult]] = {
+  private def getSingleQuote(ticker: String, day: Int, month: Int, year: Int): Future[Try[Option[DailyQuoteResult]]] = {
 
     val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
 
@@ -51,16 +52,18 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
     log.warning(fullUri.toString())
 
     val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
-    Http().singleRequest(req).flatMap{ response =>
-      response.status match{
-        case StatusCodes.OK => Unmarshal(response.entity).to[DailyQuoteResult].map{ quote =>
-          Some(quote)
+    Http().singleRequest(req).flatMap { response =>
+      response.status match {
+        case StatusCodes.NotFound => Future(Success(None))
+        case StatusCodes.OK => Unmarshal(response.entity).to[DailyQuoteResult].map { quote =>
+          Success(Some(quote))
         }
-        case _ => Future(None)
+        case _ => Unmarshal(response.entity).to[String].map { body =>
+          Failure(new RuntimeException(body))
+        }
       }
     }
   }
-
 }
 
 object StockPriceConnector {

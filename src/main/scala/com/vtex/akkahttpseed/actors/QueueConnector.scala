@@ -38,8 +38,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
       sendMessage(messageToSend) pipeTo sender()
     }
 
-    case ReceiveMessage => {
-      receiveMessage pipeTo sender()
+    case ReceiveMessages => {
+      receiveMessages pipeTo sender()
     }
   }
 
@@ -56,7 +56,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
     }
   }
 
-  private def receiveMessage: Future[Option[String]] = {
+  private def receiveMessages: Future[List[String]] = {
     Future(Some("foo"))
   }
 
@@ -68,6 +68,6 @@ object QueueConnector {
 
   case class SendMessage(message: String)
 
-  case object ReceiveMessage
+  case object ReceiveMessages
 
 }

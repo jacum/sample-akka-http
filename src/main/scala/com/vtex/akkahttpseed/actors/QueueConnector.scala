@@ -1,11 +1,11 @@
 package com.vtex.akkahttpseed.actors
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+
 /**
   * Created by felipe on 12/06/16.
   */
@@ -16,7 +16,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
-  implicit val timeout = Timeout(10.seconds)
+
 
   def receive = {
 
@@ -29,12 +29,12 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
   }
 
 
-  private def sendMessage(message: String): Future[Unit] = {
-    ???
+  private def sendMessage(message: String): Future[Option[Unit]] = {
+    Future(Some(()))
   }
 
-  private def receiveMessage:Future[Option[String]] = {
-    ???
+  private def receiveMessage: Future[Option[String]] = {
+    Future(Some("foo"))
   }
 
 }

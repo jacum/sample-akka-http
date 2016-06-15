@@ -1,11 +1,14 @@
 package com.vtex.akkahttpseed.actors
 
 import akka.actor.{Actor, ActorLogging}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import akka.http.scaladsl.Http
+import com.vtex.akkahttpseed.models.DailyQuoteResult
+import com.vtex.akkahttpseed.models.marshallers.Implicits._
 
 import scala.concurrent.Future
 
@@ -27,13 +30,13 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
   def receive = {
 
     case GetQuote(ticker, day, month, year) =>
-      getQuote(ticker, day, month, year) pipeTo sender()
+      getSingleQuote(ticker, day, month, year) pipeTo sender()
 
   }
 
-  private def getQuote(ticker: String, day: Int, month: Int, year: Int): Future[Option[String]] = {
+  private def getSingleQuote(ticker: String, day: Int, month: Int, year: Int): Future[Option[DailyQuoteResult]] = {
 
-    val baseUri = "https://www.quandl.com/api/v3/datasets/WIKI/"
+    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
 
     val query = Query(
       "order" -> "asc",
@@ -43,10 +46,19 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
       "column_index" -> "4",
       "api_key" -> apiKey)
 
+    val fullUri = Uri(baseUri).withQuery(query)
 
-    val fullUri = Uri()
-    val req = HttpRequest(method = HttpMethods.GET, uri = Uri(fullUri), entity = HttpEntity(ContentTypes.`application/json`, searchQuery))
-    Http().singleRequest(req)
+    log.warning(fullUri.toString())
+
+    val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
+    Http().singleRequest(req).flatMap{ response =>
+      response.status match{
+        case StatusCodes.OK => Unmarshal(response.entity).to[DailyQuoteResult].map{ quote =>
+          Some(quote)
+        }
+        case _ => Future(None)
+      }
+    }
   }
 
 }

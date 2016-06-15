@@ -15,7 +15,7 @@ import com.vtex.akkahttpseed.models.marshallers.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
 /**
   * Created by felipe on 13/06/16.
@@ -66,14 +66,13 @@ class QueueRoutes(
         val (date, value) = result.dataset.data.head
         val queueMessage = s"value for $date was $value"
 
-        (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[Option[Unit]].map {
-          case Some(_) => HttpResponse(StatusCodes.Accepted)
-          case None => HttpResponse(StatusCodes.ServiceUnavailable)
+        (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[Try[String]].map {
+          case Success(messageId) => HttpResponse(entity = HttpEntity(messageId))
+          case Failure(e) => HttpResponse(StatusCodes.InternalServerError,entity = HttpEntity(e.getMessage))
         }
       }
       case None => Future(HttpResponse(StatusCodes.BadRequest, entity = HttpEntity("quote not found")))
     }
-
   }
 
   //  private def receiveMessage = {

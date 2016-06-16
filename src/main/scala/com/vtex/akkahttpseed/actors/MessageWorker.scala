@@ -22,6 +22,8 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
   override def preStart = {
+    log.debug("Worker will start scheduling")
+
     // schedule the delivery of messages to this very actor (self) every 5 seconds
     context.system.scheduler.schedule(500.millis, 5000.millis, self, SendMessageToQueue(messageBody))
   }
@@ -30,7 +32,7 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
 
     case SendMessageToQueue(message) => {
 
-      log.debug("sending message...")
+      log.debug("Worker will send message to queue")
 
       val actualMessage = "Message sent automatically: '" + message + "' received at " + ZonedDateTime.now.format(DateTimeFormatter.ISO_INSTANT)
 

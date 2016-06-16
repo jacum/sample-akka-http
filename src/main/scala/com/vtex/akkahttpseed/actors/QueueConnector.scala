@@ -5,16 +5,18 @@ import java.util.concurrent.{Future => JFuture}
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import com.amazonaws.services.sqs.model.{GetQueueUrlResult, ReceiveMessageRequest, SendMessageRequest}
+import com.amazonaws.services.sqs.model._
 import com.amazonaws.services.sqs.{AmazonSQS, AmazonSQSAsyncClient, AmazonSQSClient}
 import com.vtex.akkahttpseed.models.response.QueueMessage
+import com.vtex.akkahttpseed.utils.aws.sqs.AWSAsyncHandler
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.java8.FuturesConvertersImpl
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 /**
   * Created by felipe on 12/06/16.
@@ -48,12 +50,17 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
     case InitClient => {
 
-      val sqsClient = new AmazonSQSClient()
+      val sqsClient = new AmazonSQSAsyncClient()
 
-      val tryQueueUrl = Try(sqsClient.getQueueUrl(queueName).getQueueUrl)
+      val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
 
-      context.become(initialized(sqsClient, tryQueueUrl))
+      sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
 
+      queueUrlResult.future.map {
+        case (request, result) => {
+          context.become(initialized(sqsClient, result.getQueueUrl))
+        }
+      }
     }
   }
 
@@ -61,64 +68,66 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
     * In the `initialized` state, this actor responds to these messages
     *
     * @param client
-    * @param tryQueueUrl
+    * @param queueUrl
     * @return
     */
-  private def initialized(client: AmazonSQSClient, tryQueueUrl: Try[String]): Receive = {
+  private def initialized(client: AmazonSQSAsyncClient, queueUrl: String): Receive = {
 
     case SendMessage(messageToSend: String) => {
-      sendMessageToQueue(client, tryQueueUrl, messageToSend) pipeTo sender()
+      log.debug("Queue connector will send message to queue")
+      sendMessageToQueue(client, queueUrl, messageToSend) pipeTo sender()
     }
 
     case ReceiveMessages(upTo) => {
-      receiveMessagesFromQueue(client, tryQueueUrl, upTo.getOrElse(10)) pipeTo sender()
-    }
-
-    case DeletMessage(receiptHandle) => {
-      deleteMessage(client, tryQueueUrl, receiptHandle)
+      log.debug("Queue connector will read messages from queue")
+      receiveMessagesFromQueue(client, queueUrl, upTo.getOrElse(10)) pipeTo sender()
     }
 
   }
 
-  private def sendMessageToQueue(client: AmazonSQSClient, tryQueueUrl: Try[String], message: String): Future[Try[String]] = {
+  private def sendMessageToQueue(
+                                  client: AmazonSQSAsyncClient,
+                                  queueUrl: String,
+                                  message: String): Future[Try[String]] = {
     Future {
       for {
-        queueUrl <- tryQueueUrl
         sendMessageResult <- Try(client.sendMessage(queueUrl, message))
       } yield sendMessageResult.getMessageId
     }
   }
 
   private def receiveMessagesFromQueue(
-                                        client: AmazonSQSClient,
-                                        tryQueueUrl: Try[String],
+                                        client: AmazonSQSAsyncClient,
+                                        queueUrl: String,
                                         upTo: Int): Future[Try[List[QueueMessage]]] = {
 
-    Future {
-      for {
-        queueUrl <- tryQueueUrl
-        receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
-        messageObjects <- Try(client.receiveMessage(receiveRequest).getMessages.asScala.toList)
+    // the aws-java-sdk uses java futures so me must do this to handle them in an unblocking manner
+    val receiveResultHandler = new AWSAsyncHandler[ReceiveMessageRequest, ReceiveMessageResult]()
+    val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
 
-        // underscore represents an unused result
-        _ = messageObjects.foreach { message =>
-          self ! DeletMessage(message.getReceiptHandle)
-        }
+    val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
+    client.receiveMessageAsync(receiveRequest, receiveResultHandler)
 
-      } yield messageObjects.map { obj =>
-        QueueMessage(obj.getMessageId, Some(obj.getBody))
-      }.take(upTo)
+    receiveResultHandler.future.map {
+      case (_, receiveResult) => {
+
+        val messages = receiveResult.getMessages.asScala.toList
+
+        val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
+
+        val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
+
+        // we're not interested in the deletion result, we just want to delete
+        client.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
+
+        val queueMessages = messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
+
+        Success(queueMessages)
+      }
+    }.recover {
+      case NonFatal(nf) => Failure(nf)
     }
-  }
 
-  private def deleteMessage(client: AmazonSQSClient, tryUrl: Try[String], receiptHandle: String): Future[Try[Unit]] = {
-    Future {
-      for {
-        queueUrl <- tryUrl
-        // underscore represents an unused result
-        _ <- Try(client.deleteMessage(queueUrl, receiptHandle))
-      } yield ()
-    }
   }
 
 }
@@ -130,7 +139,5 @@ object QueueConnector {
   case class SendMessage(message: String)
 
   case class ReceiveMessages(upTo: Option[Int])
-
-  case class DeletMessage(receiptHandle: String)
 
 }

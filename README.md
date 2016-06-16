@@ -5,7 +5,6 @@ Sample akka-http seed project, ready for packaging with docker.
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7d91311bacdf7872c884)
 
-
 ## Prerequisites
 
 - Git

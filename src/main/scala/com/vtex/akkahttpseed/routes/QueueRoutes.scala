@@ -17,6 +17,7 @@ import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 import scala.util.{Failure, Random, Success, Try}
 
 /**
@@ -38,60 +39,76 @@ class QueueRoutes(
             sendMessage(formModel)
           }
         }
-      } ~
-      path("readFromQueue") {
-        get {
-          complete{
-            receiveMessages
-          }
+      }
+    } ~
+    path("readFromQueue" / IntNumber) { limit =>
+      get {
+        complete {
+          receiveMessages(limit)
         }
-      } ~
-      path("initWorker") {
-        complete("initialized worker")
-      } ~
-      path("stopWorker") {
-        complete("stopped worked")
+      }
+    } ~
+    path("readFromQueue") {
+      get {
+        complete {
+          receiveMessages(10)
+        }
       }
     }
   }
 
-  private def sendMessage(model: GetQuoteModel) = {
 
-    val ticker = model.ticker
-    val year = 2015
-    val month = Random.nextInt(11) + 1
-    val day = Random.nextInt(27) + 1 // 2015 is not a leap year so maximum is 28
+  /**
+    * This method sends a quote (stock price) from the company identified by $model.ticker,
+    * at a random date.
+    *
+    * Note that this method uses `map` and `flatMap` to resolve futures, options, tries and other monads
+    *
+    * @param model
+    * @return
+    */
+  private def sendMessage(model: GetQuoteModel): Future[HttpResponse] = {
 
-    (stockPriceConnector ? StockPriceConnector.GetQuote(ticker, day, month, year)).mapTo[Try[Option[DailyQuoteResult]]].flatMap {
-      case Success(maybeResult) => {
-        maybeResult match {
-          case Some(result) => {
-            if (result.dataset.data.nonEmpty) {
-              val (date, value) = result.dataset.data.head
-              val queueMessage = s"value for $date was $value"
+    (stockPriceConnector ? StockPriceConnector.GetQuote(model.ticker, model.day, model.month, model.year))
+      .mapTo[Try[Option[DailyQuoteResult]]]
+      .flatMap {
+        case Success(maybeResult) => {
 
-              (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[Try[String]].flatMap {
-                case Success(messageId) => Marshal(QueueMessage(messageId)).to[HttpResponse]
-                case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
+          val ticker = model.ticker
+          val date = s"${model.day}-${model.month}-${model.year}"
+          maybeResult match {
+            case Some(result) => {
+              if (result.dataset.data.nonEmpty) {
+                val (date, value) = result.dataset.data.head
+                val queueMessage = s"value for $ticker on $date was USD $value"
+
+                (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[Try[String]].flatMap {
+                  case Success(messageId) => Marshal(QueueMessage(messageId, None)).to[HttpResponse]
+                  case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
+                }
+              } else {
+                Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))
               }
-            } else {
-              Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $day-$month-$year""")))
             }
+            case None => Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))
           }
-          case None => Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $day-$month-$year""")))
         }
+        case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
       }
-      case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
+  }
+
+  /**
+    * This method returns up to `upTo` messages, that may be available for reading in the queue.
+    *
+    * @param upTo
+    * @return
+    */
+  private def receiveMessages(upTo: Int) = {
+    (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[Try[List[QueueMessage]]].flatMap {
+      case Success(messages) => Marshal(messages).to[HttpResponse]
+      case Failure(NonFatal(nf)) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(nf.getMessage)))
     }
   }
 
-  private def receiveMessages = {
-    (queueConnector ? QueueConnector.ReceiveMessages).mapTo[List[String]].flatMap { messages =>
-      if(messages.nonEmpty){
-        ???
-      }else{
-        Marshal(List.empty[String]).to[HttpResponse]
-      }
-    }
-  }
 }
+

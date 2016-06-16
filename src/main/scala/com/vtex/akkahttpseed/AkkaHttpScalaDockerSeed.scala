@@ -2,7 +2,7 @@ package com.vtex.akkahttpseed
 
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.actor.{ActorSystem, Props}
-import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
+import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.routes.QueueRoutes
 import akka.http.scaladsl.Http
 import com.typesafe.config.ConfigFactory
@@ -20,13 +20,15 @@ object AkkaHttpScalaDockerSeed extends App {
   val conf = ConfigFactory.load()
   val queueName = conf.getString("custom.queue.name")
   val apiKey = conf.getString("custom.stocks.api-key")
+  val messageToSend = conf.getString("custom.messages.body")
 
   // actors
-  val queueConnector = system.actorOf(Props(classOf[QueueConnector],queueName), "queue-connector")
+  val queueConnector = system.actorOf(Props(classOf[QueueConnector], queueName), "queue-connector")
   val stockPriceConnector = system.actorOf(Props(classOf[StockPriceConnector], apiKey), "stock-price-connector")
+  val stockPriceWorker = system.actorOf(Props(classOf[MessageWorker], queueConnector, messageToSend), "message-worker")
 
   // route definitions
-  val queueRoutes = new QueueRoutes(queueConnector,stockPriceConnector)
+  val queueRoutes = new QueueRoutes(queueConnector, stockPriceConnector)
 
   // merge all routes here
   def allRoutes = {

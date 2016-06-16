@@ -11,9 +11,9 @@ import spray.json.DefaultJsonProtocol
   */
 object Implicits extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val getQuoteFormats = jsonFormat1(GetQuoteModel)
+  implicit val getQuoteFormats = jsonFormat4(GetQuoteModel)
   implicit val datasetFormats = jsonFormat1(DatasetData)
   implicit val dailyQuoteFormats = jsonFormat1(DailyQuoteResult)
-  implicit val queueMessageFormtas = jsonFormat1(QueueMessage)
+  implicit val queueMessageFormtas = jsonFormat2(QueueMessage)
 
 }

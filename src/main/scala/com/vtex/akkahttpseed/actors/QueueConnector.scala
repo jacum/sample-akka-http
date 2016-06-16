@@ -115,7 +115,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
     Future {
       for {
         queueUrl <- tryUrl
-        deleteMessageresult <- Try(client.deleteMessage(queueUrl, receiptHandle))
+        // underscore represents an unused result
+        _ <- Try(client.deleteMessage(queueUrl, receiptHandle))
       } yield ()
     }
   }

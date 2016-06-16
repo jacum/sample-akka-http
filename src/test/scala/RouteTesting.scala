@@ -1,20 +1,16 @@
-package com.vtex.akkahttpseed
-
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import akka.actor.{ActorSystem, Props}
+import akka.actor.Props
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.typesafe.config.ConfigFactory
 import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
-import akka.http.scaladsl.Http
-import com.typesafe.config.ConfigFactory
-import akka.http.scaladsl.server.Directives._
+import org.scalatest.{Matchers, WordSpec}
 
 /**
-  * Created by felipe on 12/06/16.
+  * Created by felipe.almeida@vtex.com.br on 16/06/16.
   */
-object AkkaHttpScalaDockerSeed extends App {
+class RouteTesting extends WordSpec with Matchers with ScalatestRouteTest {
 
-  implicit val system = ActorSystem("main-actor-system")
-  implicit val materializer = ActorMaterializer(ActorMaterializerSettings(system))
   implicit val ec = system.dispatcher
 
   val conf = ConfigFactory.load()
@@ -37,5 +33,12 @@ object AkkaHttpScalaDockerSeed extends App {
     monitoringRoutes.routes
   }
 
-  Http().bindAndHandle(allRoutes, "0.0.0.0", 5000)
+  "The service" should{
+    "respond to healthcheck" in {
+      Get("/healthcheck") ~> allRoutes ~> check{
+        responseAs[String] shouldEqual "OK"
+      }
+    }
+  }
+
 }

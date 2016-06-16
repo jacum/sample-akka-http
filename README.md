@@ -1,6 +1,11 @@
 # akka-http-scala-docker-seed
 Sample akka-http seed project, ready for packaging with docker.
 
+## Operations
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7d91311bacdf7872c884)
+
+
 ## Prerequisites
 
 - Git
@@ -60,7 +65,7 @@ You'll need to change some configuration in `src/main/resources/application.conf
 
 - your queue name in SQS
 - the api key for using the stock quote API (use what's been given to you or get a new one at [https://www.quandl.com/users/login](https://www.quandl.com/users/login))
-
+- the message that you want the worker to write to the aforementioned queue
 
 ### Docker packaging
 

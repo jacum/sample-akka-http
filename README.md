@@ -9,6 +9,10 @@ Sample akka-http seed project, ready for packaging with docker.
 
 - Git
 
+- Docker
+
+  Download at [https://docs.docker.com/engine/installation/](https://docs.docker.com/engine/installation/)
+
 - Java 8
 
   Upon running `java -version` you should see something like this:

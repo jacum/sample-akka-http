@@ -8,15 +8,21 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 
 import scala.concurrent.duration._
 
+/**
+  * Companion object for the Actor
+  *
+  * props is the actor factoring that is safer to be in a companion object to not get in serialization and race issues
+  * since actors creations are async and location transparency
+  *
+  * case object / case class are messages that this actor can handle
+  *
+  * This structure follow the Akka Recommended Practices for Actors
+  * http://doc.akka.io/docs/akka/current/scala/actors.html#Recommended_Practices
+  *
+  */
 object MessageWorker {
 
-  // actor "factory" - it's safer to do this in a companion object like this
-  // so as to avoid serialization issues and race conditions, since
-  // actor creation is asynchronous and location transparent
-  // see also: http://doc.akka.io/docs/akka/current/scala/actors.html#props
   def props(queueConnector: ActorRef, messageToSend: String): Props = Props(new MessageWorker(queueConnector, messageToSend))
-
-  // messages this actor supports:
 
   case object Initialize
 
@@ -25,7 +31,7 @@ object MessageWorker {
 }
 
 /**
-  * This actor, once started, will periodically ask the queue connector (actor that controls the
+  * This actor, once started, will periodically tell the queue connector (actor that controls the
   * queue system) to write a message to the queue. This is done using scheduling; read more
   * on this link: http://doc.akka.io/docs/akka/current/scala/howto.html#scheduling-periodic-messages
   */
@@ -36,13 +42,7 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
 
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
-
-  override def preStart = {
-    log.debug("Worker will start scheduling")
-
-    // schedule the delivery of messages to this very actor (self) every 5 seconds
-    context.system.scheduler.schedule(500.millis, 5000.millis, self, SendMessageToQueue(messageBody))
-  }
+  context.system.scheduler.schedule(500.millis, 5000.millis, self, SendMessageToQueue(messageBody))
 
   def receive = {
 

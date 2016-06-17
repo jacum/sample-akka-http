@@ -39,6 +39,16 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
+  val sqsClient = new AmazonSQSAsyncClient()
+  val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
+  sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
+  queueUrlResult.future.map {
+    case (request, result) => {
+      context.become(initialized(result.getQueueUrl))
+    }
+  }
+
+
   /**
     * This is called when this actor is started
     *
@@ -52,26 +62,12 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
   def receive: Receive = uninitialized
 
   /**
-    * In the uninitialized stated, this actor only responds to InitClient
+    * Uninitialized state, actor is not ready (because of async operations)
     *
     * @return
     */
   private def uninitialized: Receive = {
-
-    case InitClient => {
-
-      val sqsClient = new AmazonSQSAsyncClient()
-
-      val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
-
-      sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
-
-      queueUrlResult.future.map {
-        case (request, result) => {
-          context.become(initialized(sqsClient, result.getQueueUrl))
-        }
-      }
-    }
+    case _ => log.warning("log not initialized")
   }
 
   /**
@@ -81,16 +77,16 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
     * @param queueUrl
     * @return
     */
-  private def initialized(client: AmazonSQSAsyncClient, queueUrl: String): Receive = {
+  private def initialized(queueUrl: String): Receive = {
 
     case SendMessage(messageToSend: String) => {
       log.debug("Queue connector will send message to queue")
-      sendMessageToQueue(client, queueUrl, messageToSend) pipeTo sender()
+      sendMessageToQueue(sqsClient, queueUrl, messageToSend) pipeTo sender()
     }
 
     case ReceiveMessages(upTo) => {
       log.debug("Queue connector will read messages from queue")
-      receiveMessagesFromQueue(client, queueUrl, upTo.getOrElse(10)) pipeTo sender()
+      receiveMessagesFromQueue(sqsClient, queueUrl, upTo.getOrElse(10)) pipeTo sender()
     }
 
   }
@@ -111,9 +107,9 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
                                         queueUrl: String,
                                         upTo: Int): Future[Try[List[QueueMessage]]] = {
 
-    // the aws-java-sdk uses java futures so me must do this to handle them in an unblocking manner
+    // aws sdk in java use callback functions to return results, AWSAsyncHandler are handlers in scala that
+    // expose scala futures for a more linear coding without the need of isolated callbacks
     val receiveResultHandler = new AWSAsyncHandler[ReceiveMessageRequest, ReceiveMessageResult]()
-    val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
 
     val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
     client.receiveMessageAsync(receiveRequest, receiveResultHandler)
@@ -127,6 +123,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
         val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
 
+        val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
         // we're not interested in the deletion result, we just want to delete
         client.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
 

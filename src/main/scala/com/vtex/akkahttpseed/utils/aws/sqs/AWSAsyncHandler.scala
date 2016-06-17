@@ -6,7 +6,11 @@ import com.amazonaws.handlers.AsyncHandler
 import scala.util.Try
 
 /**
-  * Created by wellfabr@vtex.com.br on 16/06/16.
+  * aws sdk in java use callback functions to return results, AWSAsyncHandler are handlers in scala that
+  * expose scala futures for a more linear coding without the need of isolated callbacks
+  *
+  * @tparam T
+  * @tparam W
   */
 class AWSAsyncHandler[T <: AmazonWebServiceRequest, W] extends AsyncHandler[T, W] {
 

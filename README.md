@@ -28,7 +28,7 @@ code that is generic enough so as to be used in other projects.
 file can be thought of as a "main" method. Here the actor system is started, 
 others actors are started too and all routes are merged.
 
-- `src/test` test classes
+- `src/test`: test classes
 
 
 ## Prerequisites

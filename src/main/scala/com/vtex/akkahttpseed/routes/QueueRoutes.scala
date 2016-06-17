@@ -17,7 +17,7 @@ import com.vtex.akkahttpseed.models.response.QueueMessage
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Failure, Success, Try}
 
 /**
   * Created by felipe on 13/06/16.

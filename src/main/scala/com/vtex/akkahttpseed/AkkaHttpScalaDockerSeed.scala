@@ -1,12 +1,12 @@
 package com.vtex.akkahttpseed
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import akka.actor.{ActorSystem, Props}
+import com.typesafe.config.ConfigFactory
 import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
-import akka.http.scaladsl.Http
-import com.typesafe.config.ConfigFactory
-import akka.http.scaladsl.server.Directives._
 
 /**
   * Created by felipe on 12/06/16.

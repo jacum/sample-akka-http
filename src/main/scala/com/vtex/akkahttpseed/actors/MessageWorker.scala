@@ -10,11 +10,14 @@ import scala.concurrent.duration._
 
 object MessageWorker {
 
-  // actor factoring, safer to be in an companion object like this to not get in serialization and race issues
-  // since actor creating is async and with location transparency
+  // actor "factory" - it's safer to do this in a companion object like this
+  // so as to avoid serialization issues and race conditions, since
+  // actor creation is asynchronous and location transparent
+  // see also: http://doc.akka.io/docs/akka/current/scala/actors.html#props
   def props(queueConnector: ActorRef, messageToSend: String): Props = Props(new MessageWorker(queueConnector, messageToSend))
 
-  // actor supported messages
+  // messages this actor supports:
+
   case object Initialize
 
   case class SendMessageToQueue(message: String)

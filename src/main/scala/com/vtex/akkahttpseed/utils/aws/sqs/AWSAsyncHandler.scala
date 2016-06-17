@@ -1,14 +1,13 @@
 package com.vtex.akkahttpseed.utils.aws.sqs
 
-/**
-  * Created by wellfabr@vtex.com.br on 16/06/16.
-  */
-
 import com.amazonaws.AmazonWebServiceRequest
 import com.amazonaws.handlers.AsyncHandler
 
 import scala.util.Try
 
+/**
+  * Created by wellfabr@vtex.com.br on 16/06/16.
+  */
 class AWSAsyncHandler[T <: AmazonWebServiceRequest, W] extends AsyncHandler[T, W] {
 
   private val promise = scala.concurrent.Promise[(T, W)]()

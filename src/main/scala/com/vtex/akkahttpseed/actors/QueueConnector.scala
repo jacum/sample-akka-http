@@ -13,15 +13,21 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Companion object for the Actor
+  *
+  * props is the actor factory that is safer to be here to not get in serialization and race issues
+  * since actors creations are async and with location transparency
+  *
+  * case object / case class are messages that this actor can handle
+  *
+  * This structure follow the Akka Recommended Practices for Actors
+  * http://doc.akka.io/docs/akka/current/scala/actors.html#Recommended_Practices
+  *
+  */
 object QueueConnector {
 
-  // actor "factory" - it's safer to do this in a companion object like this
-  // so as to avoid serialization issues and race conditions, since
-  // actor creation is asynchronous and location transparent
-  // see also: http://doc.akka.io/docs/akka/current/scala/actors.html#props
   def props(queueName: String): Props = Props(new QueueConnector(queueName))
-
-  // messages this actor supports:
 
   case object InitClient
 
@@ -31,6 +37,11 @@ object QueueConnector {
 
 }
 
+/**
+  * This actor is like a SQS adapter. All operations with AWS SQS are done through here
+  *
+  * @param queueName
+  */
 class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
   import QueueConnector._
@@ -49,13 +60,6 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
   }
 
 
-  /**
-    * This is called when this actor is started
-    *
-    */
-  override def preStart: Unit = {
-    self ! InitClient
-  }
 
 
   // This actor starts off using the `uninitialized` method to respond to messages

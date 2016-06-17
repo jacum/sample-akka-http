@@ -11,8 +11,8 @@ import scala.concurrent.duration._
 /**
   * Companion object for the Actor
   *
-  * props is the actor factoring that is safer to be in a companion object to not get in serialization and race issues
-  * since actors creations are async and location transparency
+  * props is the actor factory that is safer to be here to not get in serialization and race issues
+  * since actors creations are async and with location transparency
   *
   * case object / case class are messages that this actor can handle
   *
@@ -23,8 +23,6 @@ import scala.concurrent.duration._
 object MessageWorker {
 
   def props(queueConnector: ActorRef, messageToSend: String): Props = Props(new MessageWorker(queueConnector, messageToSend))
-
-  case object Initialize
 
   case class SendMessageToQueue(message: String)
 

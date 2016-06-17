@@ -23,9 +23,9 @@ object AkkaHttpScalaDockerSeed extends App {
   val messageToSend = conf.getString("custom.messages.body")
 
   // actors
-  val queueConnector = system.actorOf(Props(classOf[QueueConnector], queueName), "queue-connector")
-  val stockPriceConnector = system.actorOf(Props(classOf[StockPriceConnector], apiKey), "stock-price-connector")
-  val stockPriceWorker = system.actorOf(Props(classOf[MessageWorker], queueConnector, messageToSend), "message-worker")
+  val queueConnector = system.actorOf(QueueConnector.props(queueName), "queue-connector")
+  val stockPriceConnector = system.actorOf(StockPriceConnector.props(apiKey), "stock-price-connector")
+  val stockPriceWorker = system.actorOf(MessageWorker.props(queueConnector, messageToSend), "message-worker")
 
   // route definitions
   val queueRoutes = new QueueRoutes(queueConnector, stockPriceConnector)

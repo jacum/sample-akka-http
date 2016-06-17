@@ -1,6 +1,6 @@
 package com.vtex.akkahttpseed.actors
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
@@ -11,11 +11,19 @@ import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
 
 import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by felipe on 12/06/16.
-  */
+object StockPriceConnector {
+
+  // actor factoring, safer to be in an companion object like this to not get in serialization and race issues
+  // since actor creating is async and with location transparency
+  def props(apiKey: String): Props = Props(new StockPriceConnector(apiKey))
+
+  // actor supported messages
+  case class GetQuote(ticker: String, day: Int, month: Int, year: Int)
+
+}
+
 class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
   import StockPriceConnector._
@@ -66,8 +74,3 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
   }
 }
 
-object StockPriceConnector {
-
-  case class GetQuote(ticker: String, day: Int, month: Int, year: Int)
-
-}

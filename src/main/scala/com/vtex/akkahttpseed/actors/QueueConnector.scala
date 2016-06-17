@@ -5,22 +5,31 @@ import java.util.concurrent.{Future => JFuture}
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.amazonaws.services.sqs.model._
-import com.amazonaws.services.sqs.{AmazonSQS, AmazonSQSAsyncClient, AmazonSQSClient}
 import com.vtex.akkahttpseed.models.response.QueueMessage
 import com.vtex.akkahttpseed.utils.aws.sqs.AWSAsyncHandler
 
-import scala.compat.java8.FutureConverters._
-import scala.concurrent.java8.FuturesConvertersImpl
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by felipe on 12/06/16.
-  */
+object QueueConnector {
+
+  // actor factoring, safer to be in an companion object like this to not get in serialization and race issues
+  // since actor creating is async and with location transparency
+  def props(queueName: String): Props = Props(new QueueConnector(queueName))
+
+  // actor supported messages
+  case object InitClient
+
+  case class SendMessage(message: String)
+
+  case class ReceiveMessages(upTo: Option[Int])
+
+}
+
 class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
   import QueueConnector._
@@ -132,12 +141,3 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging {
 
 }
 
-object QueueConnector {
-
-  case object InitClient
-
-  case class SendMessage(message: String)
-
-  case class ReceiveMessages(upTo: Option[Int])
-
-}

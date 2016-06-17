@@ -9,7 +9,6 @@
         </encoder>
     </appender>
 
-    <!-- Send debug messages to a file at "c:/jcg.log" -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/var/log/akka/akka-http-docker-seed.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

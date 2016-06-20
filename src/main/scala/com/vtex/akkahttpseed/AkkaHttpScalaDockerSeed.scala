@@ -8,9 +8,6 @@ import com.typesafe.config.ConfigFactory
 import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
 
-/**
-  * Created by felipe on 12/06/16.
-  */
 object AkkaHttpScalaDockerSeed extends App {
 
   implicit val system = ActorSystem("main-actor-system")
@@ -34,7 +31,7 @@ object AkkaHttpScalaDockerSeed extends App {
   // merge all routes here
   def allRoutes = {
     queueRoutes.routes ~
-    monitoringRoutes.routes
+      monitoringRoutes.routes
   }
 
   Http().bindAndHandle(allRoutes, "0.0.0.0", 5000)

@@ -35,6 +35,8 @@ object QueueConnector {
 
   case class ReceiveMessages(upTo: Option[Int])
 
+  case class SendMessageResultContainer(messageId: String)
+
 }
 
 /**
@@ -64,7 +66,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
 
   val sqsClient = new AmazonSQSAsyncClient()
 
-  initQueueURL()
+  tryInitQueueURL()
 
   // This actor starts off using the `uninitialized`
   def receive: Receive = uninitialized
@@ -73,22 +75,24 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     * The resolve of Queue URL is done asynchronously just to illustrate an async initialization behavior.
     * You can use a static url without this call.
     */
-  def initQueueURL() {
+  def tryInitQueueURL() {
 
     // Read more about the custom AWSAsyncHandler inside it´s source code.
     val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
 
     sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
-    queueUrlResult.future.map {
-      case (request, result) => {
-
+    queueUrlResult.future onComplete {
+      case Success((request, result)) =>
         // WARNING, Never change any state of the actor inside a Future because of race conditions.
         // The state change need to be done inside the message processing like in CompleteInitialize
         // http://doc.akka.io/docs/akka/current/general/jmm.html#Actors_and_shared_mutable_state
 
         self ! CompleteInitialize(result.getQueueUrl)
-      }
+
+        // actor can´t continue if it is unable to initialize
+      case Failure(ex) => context stop self
     }
+
   }
 
 
@@ -142,9 +146,9 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
 
   }
 
-  private def sendMessageToQueue(queueUrl: String, message: String): Future[String] = {
+  private def sendMessageToQueue(queueUrl: String, message: String): Future[SendMessageResultContainer] = {
     val sendResult = new AWSAsyncHandler[SendMessageRequest, SendMessageResult]()
-    val result = sendResult.future.map{case (sendMessageRequest, sendMessageResult) => sendMessageResult.getMessageId}
+    val result = sendResult.future.map { case (sendMessageRequest, sendMessageResult) => SendMessageResultContainer(sendMessageResult.getMessageId) }
     sqsClient.sendMessageAsync(queueUrl, message, sendResult)
     result
   }

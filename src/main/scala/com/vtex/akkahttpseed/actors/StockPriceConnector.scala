@@ -9,6 +9,7 @@ import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
+import org.apache.http.protocol.ResponseServer
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -48,7 +49,8 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
   private def getSingleQuote(ticker: String, day: Int, month: Int, year: Int): Future[Try[Option[DailyQuoteResult]]] = {
 
-    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
+    //    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
+    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/fail.json"
 
     val query = Query(
       "order" -> "asc",
@@ -59,21 +61,22 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
       "api_key" -> apiKey)
 
     val fullUri = Uri(baseUri).withQuery(query)
-
-    log.info(fullUri.toString())
-
+    log.info("calling {}", fullUri.toString())
     val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
-    Http().singleRequest(req).flatMap { response =>
+    val response = Http().singleRequest(req)
+    val output = response.flatMap { response =>
       response.status match {
-        case StatusCodes.NotFound => Future(Success(None))
-        case StatusCodes.OK => Unmarshal(response.entity).to[DailyQuoteResult].map { quote =>
-          Success(Some(quote))
-        }
-        case _ => Unmarshal(response.entity).to[String].map { body =>
-          Failure(new RuntimeException(body))
-        }
+        case StatusCodes.NotFound =>
+          Future(Success(None))
+        case StatusCodes.OK =>
+          Unmarshal(response.entity).to[DailyQuoteResult].map { quote => Success(Some(quote)) }
+        case _ =>
+          Unmarshal(response.entity).to[String].map { body =>
+            Failure(new RuntimeException(body))
+          }
       }
     }
+    output
   }
 }
 

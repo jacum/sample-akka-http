@@ -30,7 +30,7 @@ object MessageWorker {
 /**
   * This actor once started will periodically tell the QueueConnector Actor to write a message to the queue.
   * This is done using scheduling.
-  * More at: http://doc.akka.io/docs/akka/current/scala/howto.html#scheduling-periodic-messages
+  * http://doc.akka.io/docs/akka/current/scala/howto.html#scheduling-periodic-messages
   */
 class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor with ActorLogging {
 
@@ -42,7 +42,7 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
 
   // The Actor QueueConnector will receive the first messages before it become ready and will handle it properly
   // without loosing any message. Read more inside the QueueConnector source code.
-    context.system.scheduler.schedule(0.millis, 10000.millis, self, SendMessageToQueue(messageBody))
+  context.system.scheduler.schedule(0.millis, 10000.millis, self, SendMessageToQueue(messageBody))
 
   def receive = {
 

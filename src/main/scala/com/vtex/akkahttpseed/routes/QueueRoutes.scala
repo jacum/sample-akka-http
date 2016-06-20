@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
+import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.forms.GetQuoteModel
@@ -80,8 +81,8 @@ class QueueRoutes(
               if (result.dataset.data.nonEmpty) {
                 val (date, value) = result.dataset.data.head
                 val queueMessage = s"value for $ticker on $date was USD $value"
-                val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[String]
-                val output = sendResult flatMap { case messageId => Marshal(QueueMessage(messageId, None)).to[HttpResponse] }
+                val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[SendMessageResultContainer]
+                val output = sendResult flatMap { case resultContainer => Marshal(QueueMessage(resultContainer.messageId, None)).to[HttpResponse] }
                 output
               } else {
                 Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))

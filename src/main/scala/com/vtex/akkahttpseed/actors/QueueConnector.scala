@@ -147,14 +147,6 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     val result = sendResult.future.map{case (sendMessageRequest, sendMessageResult) => sendMessageResult.getMessageId}
     sqsClient.sendMessageAsync(queueUrl, message, sendResult)
     result
-
-
-//    Future {
-//      for {
-//        sendMessageResult <- Try(sqsClient.sendMessage(queueUrl, message))
-//      } yield sendMessageResult.getMessageId
-//    }
-
   }
 
   private def receiveMessagesFromQueue(queueUrl: String, upTo: Int): Future[Try[List[QueueMessage]]] = {

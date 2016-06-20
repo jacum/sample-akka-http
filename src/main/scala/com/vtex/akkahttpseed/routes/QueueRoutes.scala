@@ -40,20 +40,20 @@ class QueueRoutes(
         }
       }
     } ~
-    path("readFromQueue" / IntNumber) { limit =>
-      get {
-        complete {
-          receiveMessages(limit)
+      path("readFromQueue" / IntNumber) { limit =>
+        get {
+          complete {
+            receiveMessages(limit)
+          }
+        }
+      } ~
+      path("readFromQueue") {
+        get {
+          complete {
+            receiveMessages(10)
+          }
         }
       }
-    } ~
-    path("readFromQueue") {
-      get {
-        complete {
-          receiveMessages(10)
-        }
-      }
-    }
   }
 
 
@@ -80,11 +80,8 @@ class QueueRoutes(
               if (result.dataset.data.nonEmpty) {
                 val (date, value) = result.dataset.data.head
                 val queueMessage = s"value for $ticker on $date was USD $value"
-                val askResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[Try[String]]
-                val output = askResult.flatMap {
-                  case Success(messageId) => Marshal(QueueMessage(messageId, None)).to[HttpResponse]
-                  case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
-                }
+                val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[String]
+                val output = sendResult flatMap { case messageId => Marshal(QueueMessage(messageId, None)).to[HttpResponse] }
                 output
               } else {
                 Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))

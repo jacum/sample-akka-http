@@ -60,7 +60,7 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
     val fullUri = Uri(baseUri).withQuery(query)
 
-    log.warning(fullUri.toString())
+    log.info(fullUri.toString())
 
     val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
     Http().singleRequest(req).flatMap { response =>

@@ -2,11 +2,10 @@ package com.vtex.akkahttpseed.actors
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import scala.concurrent.duration._
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-
-import scala.concurrent.duration._
 
 /**
   * Companion object for the Actor
@@ -36,14 +35,14 @@ object MessageWorker {
 class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor with ActorLogging {
 
   import MessageWorker._
-  import context.dispatcher
 
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
+  implicit val ec = context.dispatcher
 
   // The Actor QueueConnector will receive the first messages before it become ready and will handle it properly
   // without loosing any message. Read more inside the QueueConnector source code.
-  context.system.scheduler.schedule(0.millis, 10000.millis, self, SendMessageToQueue(messageBody))
+    context.system.scheduler.schedule(0.millis, 10000.millis, self, SendMessageToQueue(messageBody))
 
   def receive = {
 

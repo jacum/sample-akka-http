@@ -17,7 +17,6 @@ import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 class QueueRoutes(
                    queueConnector: ActorRef,
@@ -65,31 +64,25 @@ class QueueRoutes(
     */
   private def sendMessage(model: GetQuoteModel): Future[HttpResponse] = {
 
-    (stockPriceConnector ? StockPriceConnector.GetQuote(model.ticker, model.day, model.month, model.year))
-      .mapTo[Try[Option[DailyQuoteResult]]]
-      .flatMap {
-        case Success(maybeResult) => {
+    val askResult = (stockPriceConnector ? StockPriceConnector.GetQuote(model.ticker, model.day, model.month, model.year))
+      .mapTo[Option[DailyQuoteResult]]
+    val output = askResult.flatMap {
 
-          val ticker = model.ticker
-          val date = s"${model.day}-${model.month}-${model.year}"
-          maybeResult match {
-            case Some(result) => {
-              if (result.dataset.data.nonEmpty) {
-                val (date, value) = result.dataset.data.head
-                val queueMessage = s"value for $ticker on $date was USD $value"
-                val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[SendMessageResultContainer]
-                val output = sendResult flatMap { case resultContainer => Marshal(QueueMessage(resultContainer.messageId, None)).to[HttpResponse] }
-                output
-              } else {
-                Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))
-              }
-            }
-            case None => Future(HttpResponse(StatusCodes.NotFound, entity = HttpEntity(s"""Failed to find stock price for "$ticker" on $date""")))
-          }
-        }
-        case Failure(e) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(e.getMessage)))
+      // value of a stock can be empty on weekends
+      case Some(result) if result.dataset.data.nonEmpty => {
+        val ticker = model.ticker
+        val dateFormated = s"${model.day}-${model.month}-${model.year}"
+        val (date, value) = result.dataset.data.head
+        val queueMessage = s"value for $ticker on $dateFormated was USD $value"
+        val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[SendMessageResultContainer]
+        val output = sendResult.flatMap { case resultContainer => Marshal(QueueMessage(resultContainer.messageId, None)).to[HttpResponse] }
+        output
       }
+      case _ => Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("Failed to find stock price")))
+    }
+    output
   }
+
 
   /**
     * This method returns up to `upTo` messages, that may be available for reading in the queue.

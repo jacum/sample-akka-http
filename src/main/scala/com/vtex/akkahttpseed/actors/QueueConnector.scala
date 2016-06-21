@@ -179,7 +179,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
     sqsClient.receiveMessageAsync(receiveRequest, receiveResultHandler)
 
-    val output = receiveResultHandler.future map {
+    val output = receiveResultHandler.future.map {
       case (_, receiveResult) => {
         val messages = receiveResult.getMessages.asScala.toList
         // we're not interested in the deletion result, we just want to delete if there are any

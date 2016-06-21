@@ -11,8 +11,7 @@ import com.vtex.akkahttpseed.utils.aws.AWSAsyncHandler
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 /**
   * Companion object for the Actor
@@ -158,7 +157,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     }
 
     case ReceiveMessages(upTo) => {
-      log.info("Reading messages from queue")
+      log.info("Reading messages from SQS")
       receiveMessagesFromQueue(queueUrl, upTo.getOrElse(10)) pipeTo sender()
     }
 
@@ -171,7 +170,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     result
   }
 
-  private def receiveMessagesFromQueue(queueUrl: String, upTo: Int): Future[Try[List[QueueMessage]]] = {
+  private def receiveMessagesFromQueue(queueUrl: String, upTo: Int): Future[List[QueueMessage]] = {
 
     // aws sdk in java use callback functions to return results, AWSAsyncHandler are handlers in scala that
     // expose scala futures for a more linear coding without the need of isolated callbacks
@@ -180,26 +179,42 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
     sqsClient.receiveMessageAsync(receiveRequest, receiveResultHandler)
 
-    receiveResultHandler.future.map {
+    //    val promise = Promise[List[QueueMessage]]
+
+    val output = receiveResultHandler.future map {
       case (_, receiveResult) => {
-
         val messages = receiveResult.getMessages.asScala.toList
-
-        val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
-
-        val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
-
-        val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
         // we're not interested in the deletion result, we just want to delete
-        sqsClient.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
-
-        val queueMessages = messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
-
-        Success(queueMessages)
+        val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
+        if (deleteEntries.size > 0) {
+          val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
+          val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
+          sqsClient.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
+        }
+        messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
       }
-    }.recover {
-      case NonFatal(nf) => Failure(nf)
     }
+
+    output
+
+    //    receiveResultHandler.future onComplete {
+    //      case Success((_, receiveResult)) => {
+    //        val messages = receiveResult.getMessages.asScala.toList
+    //        // we're not interested in the deletion result, we just want to delete
+    //        val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
+    //        if (deleteEntries.size > 0) {
+    //          val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
+    //          val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
+    //          sqsClient.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
+    //        }
+    //        val queueMessages = messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
+    //        promise.complete(Try(queueMessages))
+    //      }
+    //      case Failure(ex) => promise.failure(ex)
+    //    }
+    //
+    //
+    //    promise.future
 
   }
 

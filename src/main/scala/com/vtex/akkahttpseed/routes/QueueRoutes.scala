@@ -12,12 +12,10 @@ import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.forms.GetQuoteModel
-import com.vtex.akkahttpseed.models.marshallers.Implicits._
 import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -102,10 +100,9 @@ class QueueRoutes(
     * @return
     */
   private def receiveMessages(upTo: Int) = {
-    (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[Try[List[QueueMessage]]].flatMap {
-      case Success(messages) => Marshal(messages).to[HttpResponse]
-      case Failure(NonFatal(nf)) => Future(HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(nf.getMessage)))
-    }
+    val ab = (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[List[QueueMessage]]
+    val out1 = ab.flatMap { messages => Marshal(messages).to[HttpResponse] }
+    out1
   }
 
 }

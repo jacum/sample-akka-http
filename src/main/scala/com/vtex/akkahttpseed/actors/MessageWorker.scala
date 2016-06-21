@@ -48,7 +48,7 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
 
     case SendMessageToQueue(message) => {
 
-      log.info("Sending message to queue")
+      log.info("Sending message to QueueConnector")
 
       val actualMessage = "Message sent automatically: '" + message + "' received at " + ZonedDateTime.now.format(DateTimeFormatter.ISO_INSTANT)
 

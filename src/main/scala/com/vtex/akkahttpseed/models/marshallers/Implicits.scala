@@ -6,9 +6,6 @@ import com.vtex.akkahttpseed.models.forms.GetQuoteModel
 import com.vtex.akkahttpseed.models.response.QueueMessage
 import spray.json.DefaultJsonProtocol
 
-/**
-  * Created by felipe.almeida@vtex.com.br on 14/06/16.
-  */
 object Implicits extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val getQuoteFormats = jsonFormat4(GetQuoteModel)

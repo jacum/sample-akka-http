@@ -12,15 +12,13 @@ import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.forms.GetQuoteModel
+import com.vtex.akkahttpseed.models.marshallers.Implicits._
 import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by felipe on 13/06/16.
-  */
 class QueueRoutes(
                    queueConnector: ActorRef,
                    stockPriceConnector: ActorRef)(implicit system: ActorSystem) {
@@ -100,10 +98,8 @@ class QueueRoutes(
     * @return
     */
   private def receiveMessages(upTo: Int) = {
-    val ab = (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[List[QueueMessage]]
-    val out1 = ab.flatMap { messages => Marshal(messages).to[HttpResponse] }
-    out1
+    val result = (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[List[QueueMessage]]
+    result
   }
 
 }
-

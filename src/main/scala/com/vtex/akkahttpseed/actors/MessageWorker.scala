@@ -2,10 +2,10 @@ package com.vtex.akkahttpseed.actors
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import scala.concurrent.duration._
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+
+import scala.concurrent.duration._
 
 /**
   * Companion object for the Actor

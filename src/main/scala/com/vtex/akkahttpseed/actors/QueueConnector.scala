@@ -179,12 +179,10 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
     sqsClient.receiveMessageAsync(receiveRequest, receiveResultHandler)
 
-    //    val promise = Promise[List[QueueMessage]]
-
     val output = receiveResultHandler.future map {
       case (_, receiveResult) => {
         val messages = receiveResult.getMessages.asScala.toList
-        // we're not interested in the deletion result, we just want to delete
+        // we're not interested in the deletion result, we just want to delete if there are any
         val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
         if (deleteEntries.size > 0) {
           val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
@@ -196,26 +194,6 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     }
 
     output
-
-    //    receiveResultHandler.future onComplete {
-    //      case Success((_, receiveResult)) => {
-    //        val messages = receiveResult.getMessages.asScala.toList
-    //        // we're not interested in the deletion result, we just want to delete
-    //        val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
-    //        if (deleteEntries.size > 0) {
-    //          val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
-    //          val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
-    //          sqsClient.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
-    //        }
-    //        val queueMessages = messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
-    //        promise.complete(Try(queueMessages))
-    //      }
-    //      case Failure(ex) => promise.failure(ex)
-    //    }
-    //
-    //
-    //    promise.future
-
   }
 
 }

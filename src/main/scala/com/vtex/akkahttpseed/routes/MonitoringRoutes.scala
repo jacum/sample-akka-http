@@ -6,9 +6,7 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
 
 import scala.concurrent.duration._
-/**
-  * Created by felipe.almeida@vtex.com.br on 16/06/16.
-  */
+
 class MonitoringRoutes(implicit system: ActorSystem) {
 
   implicit val ec = system.dispatcher

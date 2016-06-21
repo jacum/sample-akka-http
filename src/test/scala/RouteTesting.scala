@@ -6,9 +6,6 @@ import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceCo
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
 import org.scalatest.{Matchers, WordSpec}
 
-/**
-  * Created by felipe.almeida@vtex.com.br on 16/06/16.
-  */
 class RouteTesting extends WordSpec with Matchers with ScalatestRouteTest {
 
   implicit val ec = system.dispatcher

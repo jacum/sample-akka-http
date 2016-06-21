@@ -36,8 +36,6 @@ class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor
 
   import MessageWorker._
 
-  implicit val system = context.system
-  implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
   implicit val ec = context.dispatcher
 
   // The Actor QueueConnector will receive the first messages before it become ready and will handle it properly

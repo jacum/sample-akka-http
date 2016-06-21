@@ -71,10 +71,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
   val retryInitDelay = 10 seconds
 
   // var is mutable , val is immutable
-  // This client is mutable because extract the current available credentials.
-  // If the credential is not valid, there is a need to create another client.
-  // You cannot use objects with a live connection inside a message between actors because
-  // all messages are serialized and the connection will be lost
+  // This client is mutable because extract the current available credentials on creation.
+  // If the credential is not valid, it is necessary to create another client.
   var sqsClient: AmazonSQSAsyncClient = null
 
   self ! TryInitialize
@@ -92,6 +90,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     */
   private def uninitialized: Receive = {
 
+    // You cannot use objects with a live connection inside a message between actors (sqsClient) because
+    // all messages are serialized and the connection will be lost, for this reason sqsClient is available class in scope
     case CompleteInitialize(queueUrl) =>
 
       // Change state is safe here (message processing), but never inside a Future because of racing conditions
@@ -152,7 +152,6 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
       log.info("Sending message to SQS")
 
       // pipeTo is a pattern to forward a Future to the sender without worry about change of sender.
-      // Not applicable in this example (always the same sender) but is a recommended practice
       // http://doc.akka.io/docs/akka/current/scala/actors.html#Ask__Send-And-Receive-Future
 
       sendMessageToQueue(queueUrl, messageToSend) pipeTo sender()

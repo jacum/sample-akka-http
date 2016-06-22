@@ -64,8 +64,6 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
   import context.dispatcher
 
   implicit val logging = log
-  implicit val system = context.system
-  implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val retryInitDelay = 10 seconds
 
@@ -188,6 +186,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
           val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
           val deleteResultHandler = new AWSAsyncHandler[DeleteMessageBatchRequest, DeleteMessageBatchResult]
           sqsClient.deleteMessageBatchAsync(deleteRequestBatch, deleteResultHandler)
+          // just to show that the messages are deleted asynchronously
+          deleteResultHandler.future.onSuccess { case (req, res) => log.info("messages deleted: {}", res.getSuccessful.asScala.mkString(",")) }
         }
         messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
       }

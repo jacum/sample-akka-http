@@ -27,12 +27,12 @@ class RouteTesting extends WordSpec with Matchers with ScalatestRouteTest {
   // merge all routes here
   def allRoutes = {
     queueRoutes.routes ~
-    monitoringRoutes.routes
+      monitoringRoutes.routes
   }
 
-  "The service" should{
+  "The service" should {
     "respond to healthcheck" in {
-      Get("/healthcheck") ~> allRoutes ~> check{
+      Get("/healthcheck") ~> allRoutes ~> check {
         responseAs[String] shouldEqual "OK"
       }
     }

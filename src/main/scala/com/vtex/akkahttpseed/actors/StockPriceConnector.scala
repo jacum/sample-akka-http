@@ -47,8 +47,7 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
   private def getSingleQuote(ticker: String, day: Int, month: Int, year: Int): Future[Option[DailyQuoteResult]] = {
 
-    //    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
-    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/fail.json"
+    val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
 
     val query = Query(
       "order" -> "asc",

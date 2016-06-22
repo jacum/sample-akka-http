@@ -1,12 +1,11 @@
 package com.vtex.akkahttpseed.routes
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
 import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
@@ -15,16 +14,13 @@ import com.vtex.akkahttpseed.models.forms.GetQuoteModel
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
 import com.vtex.akkahttpseed.models.response.QueueMessage
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class QueueRoutes(
-                   queueConnector: ActorRef,
-                   stockPriceConnector: ActorRef)(implicit system: ActorSystem) {
+class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
+                 (implicit ec: ExecutionContextExecutor) {
 
-  implicit val ec = system.dispatcher
   implicit val timeout = Timeout(10.seconds)
-  implicit val mat = ActorMaterializer(ActorMaterializerSettings(system))
 
   def routes: Route = {
     path("writeToQueue") {

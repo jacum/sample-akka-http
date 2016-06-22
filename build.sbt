@@ -28,7 +28,7 @@ libraryDependencies ++= {
     "com.github.coveo" % "uap-java" % "1.3.1-coveo1",
     "org.json4s" %% "json4s-jackson" % "3.3.0",
     "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.amazonaws" % "aws-java-sdk" % "1.11.8"
+    "com.amazonaws" % "aws-java-sdk-sqs" % "1.11.9"
   )
 }
 unmanagedResourceDirectories in Compile += {

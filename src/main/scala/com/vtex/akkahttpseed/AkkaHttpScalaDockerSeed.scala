@@ -2,10 +2,14 @@ package com.vtex.akkahttpseed
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.typesafe.config.ConfigFactory
 import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
+import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
 
 object AkkaHttpScalaDockerSeed extends App {
@@ -28,6 +32,9 @@ object AkkaHttpScalaDockerSeed extends App {
   val queueRoutes = new QueueRoutes(queueConnector, stockPriceConnector)
   val monitoringRoutes = new MonitoringRoutes()
 
+  implicit def myExceptionHandler: ExceptionHandler = customGlobalErrorHandler
+
+
   // merge all routes here
   def allRoutes = {
     queueRoutes.routes ~
@@ -35,4 +42,19 @@ object AkkaHttpScalaDockerSeed extends App {
   }
 
   Http().bindAndHandle(allRoutes, "0.0.0.0", 5000)
+
+
+
+  def customGlobalErrorHandler() = ExceptionHandler {
+    case ex: ExternalResourceNotFoundException =>
+      extractUri { uri =>
+        complete(HttpResponse(NotFound, entity = ex.message))
+      }
+    case ex =>
+      val all = ex
+      complete(ex)
+  }
+
+
+
 }

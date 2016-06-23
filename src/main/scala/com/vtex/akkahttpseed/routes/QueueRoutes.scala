@@ -1,8 +1,6 @@
 package com.vtex.akkahttpseed.routes
 
 import akka.actor.ActorRef
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
@@ -10,6 +8,7 @@ import akka.util.Timeout
 import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
+import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
 import com.vtex.akkahttpseed.models.forms.GetQuoteModel
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
 import com.vtex.akkahttpseed.models.response.QueueMessage
@@ -58,12 +57,11 @@ class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
     * @param model
     * @return
     */
-  private def sendMessage(model: GetQuoteModel): Future[HttpResponse] = {
+  private def sendMessage(model: GetQuoteModel): Future[QueueMessage] = {
 
     val askResult = (stockPriceConnector ? StockPriceConnector.GetQuote(model.ticker, model.day, model.month, model.year))
       .mapTo[Option[DailyQuoteResult]]
-    val output = askResult.flatMap {
-
+    val output: Future[QueueMessage] = askResult.flatMap {
       // value of a stock can be empty on weekends
       case Some(result) if result.dataset.data.nonEmpty => {
         val ticker = model.ticker
@@ -71,10 +69,10 @@ class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
         val (date, value) = result.dataset.data.head
         val queueMessage = s"value for $ticker on $dateFormated was USD $value"
         val sendResult = (queueConnector ? QueueConnector.SendMessage(queueMessage)).mapTo[SendMessageResultContainer]
-        val output = sendResult.flatMap { case resultContainer => Marshal(QueueMessage(resultContainer.messageId, None)).to[HttpResponse] }
-        output
+        sendResult.map { case msgRes => QueueMessage(msgRes.messageId, None) }
       }
-      case _ => Future.successful(HttpResponse(StatusCodes.NotFound, entity = HttpEntity("Failed to find stock price")))
+      // transform result in a custom failure, no need to throw an exception
+      case _ => Future.failed(new ExternalResourceNotFoundException("Failed to find stock price. Stock not exists or data is empty."))
     }
     output
   }
@@ -90,5 +88,6 @@ class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
     val result = (queueConnector ? QueueConnector.ReceiveMessages(Some(upTo))).mapTo[List[QueueMessage]]
     result
   }
+
 
 }

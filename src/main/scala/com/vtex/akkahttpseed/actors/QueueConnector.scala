@@ -2,7 +2,6 @@ package com.vtex.akkahttpseed.actors
 
 import akka.actor.{Actor, ActorLogging, Props, Stash}
 import akka.pattern.pipe
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.amazonaws.services.sqs.model._
 import com.vtex.akkahttpseed.models.response.QueueMessage
@@ -121,7 +120,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
       case Success((request, result)) =>
 
         // WARNING, Never change any state of the actor inside a Future because of race conditions.
-        // The state change need to be done inside the message processing like in CompleteInitialize
+        // The state change need to be done inside the message processing, in this case within the
+        // "CompleteInitialize" message handling
         // http://doc.akka.io/docs/akka/current/general/jmm.html#Actors_and_shared_mutable_state
 
         self ! CompleteInitialize(result.getQueueUrl)

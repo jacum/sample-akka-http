@@ -8,6 +8,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
+import com.vtex.akkahttpseed.models.errors.ExternalResourceException
 import com.vtex.akkahttpseed.models.marshallers.Implicits._
 
 import scala.concurrent.Future
@@ -71,13 +72,13 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
             val someQuote = dailyQuote.map { quote => Some(quote) }
             someQuote
           }
-          // friendly expected error
           case StatusCodes.NotFound =>
             Future.successful(None)
-          // unexpected
+          // transform result in a failure, no need to throw an exception
           case _ => {
-            val externalError = Unmarshal(resp.entity).to[String].map { body =>
-              throw new RuntimeException(body)
+            val externalError = Unmarshal(resp.entity).to[String].flatMap { body =>
+              // transform result in a custom failure, no need to throw an exception
+              Future.failed(new ExternalResourceException(body))
             }
             externalError
           }

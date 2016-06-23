@@ -9,19 +9,26 @@ import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.errors.ExternalResourceException
-import com.vtex.akkahttpseed.models.marshallers.Implicits._
+import com.vtex.akkahttpseed.models.marshallers.CustomMarshallers._
 
 import scala.concurrent.Future
 
+
+/**
+  * Companion object for the Actor
+  *
+  * props is the actor factory that is safer to be here to not get in race conditions and serialization issues
+  * since actors creations are async
+  *
+  * case object / case class are messages that this actor can handle
+  *
+  * This structure follow the Akka Recommended Practices for Actors
+  * http://doc.akka.io/docs/akka/current/scala/actors.html#Recommended_Practices
+  *
+  */
 object StockPriceConnector {
 
-  // actor "factory" - it's safer to do this in a companion object like this
-  // so as to avoid serialization issues and race conditions, since
-  // actor creation is asynchronous and location transparent
-  // see also: http://doc.akka.io/docs/akka/current/scala/actors.html#props
   def props(apiKey: String): Props = Props(new StockPriceConnector(apiKey))
-
-  // messages this actor supports:
 
   case class GetQuote(ticker: String, day: Int, month: Int, year: Int)
 
@@ -31,10 +38,6 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
   import StockPriceConnector._
   import context.dispatcher
-
-  /**
-    * https://www.quandl.com/docs/api#complex-data-request
-    */
 
   implicit val system = context.system
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(context.system))
@@ -63,7 +66,7 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
     log.info("calling {}", fullUri.toString())
     val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
     val response = Http().singleRequest(req)
-    val output = response.flatMap {
+    val output: Future[Option[DailyQuoteResult]] = response.flatMap {
       case resp =>
         resp.status match {
           // format result
@@ -74,10 +77,9 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
           }
           case StatusCodes.NotFound =>
             Future.successful(None)
-          // transform result in a failure, no need to throw an exception
+          // transform other result in a failure, no need to throw an exception
           case _ => {
             val externalError = Unmarshal(resp.entity).to[String].flatMap { body =>
-              // transform result in a custom failure, no need to throw an exception
               Future.failed(new ExternalResourceException(body))
             }
             externalError

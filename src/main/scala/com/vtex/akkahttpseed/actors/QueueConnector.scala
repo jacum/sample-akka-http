@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props, Stash}
 import akka.pattern.pipe
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.amazonaws.services.sqs.model._
+import com.vtex.akkahttpseed.actors.QueueConnector._
 import com.vtex.akkahttpseed.models.response.QueueMessage
 import com.vtex.akkahttpseed.utils.aws.AWSAsyncHandler
 
@@ -26,8 +27,10 @@ import scala.util.{Failure, Success}
   */
 object QueueConnector {
 
+  //factory
   def props(queueName: String): Props = Props(new QueueConnector(queueName))
 
+  //messages
   private case object TryInitialize
 
   private case class CompleteInitialize(queueUrl: String)
@@ -36,6 +39,7 @@ object QueueConnector {
 
   case class ReceiveMessages(upTo: Option[Int])
 
+  //results
   case class SendMessageResultContainer(messageId: String)
 
 }
@@ -59,7 +63,6 @@ object QueueConnector {
 class QueueConnector(val queueName: String) extends Actor with ActorLogging with Stash {
 
 
-  import QueueConnector._
   import context.dispatcher
 
   implicit val logging = log
@@ -116,7 +119,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     // Read more about the custom AWSAsyncHandler inside it´s source code.
     val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
     sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
-    queueUrlResult.future onComplete {
+    queueUrlResult.future.onComplete {
+
       case Success((request, result)) =>
 
         // WARNING, Never change any state of the actor inside a Future because of race conditions.
@@ -126,7 +130,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
 
         self ! CompleteInitialize(result.getQueueUrl)
 
-      // actor can´t continue if it is unable to initialize
+      // actor can´t continue if it is unable to initialize, but it will retry later
       case Failure(ex) =>
         log.warning("Initializtion error, retry in {}", retryInitDelay)
         context.system.scheduler.scheduleOnce(retryInitDelay, self, TryInitialize)
@@ -149,6 +153,8 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
       log.info("Sending message to SQS")
 
       // pipeTo is a pattern to forward a Future to the sender without worry about change of sender.
+      // Since the bellow operation is async, the Actor is ready to receive another message from
+      // another sender even if the result is not complete.
       // http://doc.akka.io/docs/akka/current/scala/actors.html#Ask__Send-And-Receive-Future
 
       sendMessageToQueue(queueUrl, messageToSend) pipeTo sender()
@@ -170,8 +176,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
 
   private def receiveMessagesFromQueue(queueUrl: String, upTo: Int): Future[List[QueueMessage]] = {
 
-    // aws sdk in java use callback functions to return results, AWSAsyncHandler are handlers in scala that
-    // expose scala futures for a more linear coding without the need of isolated callbacks
+    // Read more about the custom AWSAsyncHandler inside the source code.
     val receiveResultHandler = new AWSAsyncHandler[ReceiveMessageRequest, ReceiveMessageResult]()
 
     val receiveRequest = new ReceiveMessageRequest().withQueueUrl(queueUrl).withMaxNumberOfMessages(upTo)
@@ -180,7 +185,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     val output = receiveResultHandler.future.map {
       case (_, receiveResult) => {
         val messages = receiveResult.getMessages.asScala.toList
-        // we're not interested in the deletion result, we just want to delete if there are any
+        // delete messages
         val deleteEntries = messages.map(msg => new DeleteMessageBatchRequestEntry(msg.getMessageId, msg.getReceiptHandle))
         if (deleteEntries.size > 0) {
           val deleteRequestBatch = new DeleteMessageBatchRequest(queueUrl, deleteEntries.asJava)
@@ -189,6 +194,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
           // just to show that the messages are deleted asynchronously
           deleteResultHandler.future.onSuccess { case (req, res) => log.info("messages deleted: {}", res.getSuccessful.asScala.mkString(",")) }
         }
+        // return messages
         messages.map(msg => QueueMessage(msg.getMessageId, Some(msg.getBody)))
       }
     }

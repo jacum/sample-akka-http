@@ -4,6 +4,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.vtex.akkahttpseed.actors.MessageWorker.SendMessageToQueue
 
 import scala.concurrent.duration._
 
@@ -34,9 +35,7 @@ object MessageWorker {
   */
 class MessageWorker(queueConnector: ActorRef, messageBody: String) extends Actor with ActorLogging {
 
-  import MessageWorker._
-
-  implicit val ec = context.dispatcher
+  import context.dispatcher
 
   // The Actor QueueConnector will receive the first messages before it become ready and will handle it properly
   // without loosing any message. Read more inside the QueueConnector source code.

@@ -10,7 +10,7 @@ import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
 import com.vtex.akkahttpseed.models.forms.GetQuoteModel
-import com.vtex.akkahttpseed.models.marshallers.Implicits._
+import com.vtex.akkahttpseed.models.marshallers.CustomMarshallers._
 import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.duration._
@@ -52,7 +52,10 @@ class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
     * This method sends a quote (stock price) from the company identified by $model.ticker,
     * at a random date.
     *
-    * Note that this method uses `map` and `flatMap` to resolve futures, options, tries and other monads
+    * Future is a Monad. You can transform and compose Monads for an easier computation flow without
+    * complex errors handlers and split in logic. You can transform a Monad using map / flatMap as bellow.
+    * With Monads you can focus more on the "Happy Path" (business logic) and less with Errors.
+    * You can worry about error in a single point, in this case is at the route level
     *
     * @param model
     * @return

@@ -10,8 +10,8 @@ import scala.util.Try
   * AWS SDK is in Java 7 and use callback functions to return results.
   * AWSAsyncHandler is a custom handler in Scala that expose a Scala Future.
   *
-  * Future is a Monad. Monad provides an easier computation flow with no need of complex errors handlers
-  * and with no need for isolated callback codes because you can compose Futures.
+  * Future is a Monad. You can transform and compose Monads for an easier computation flow without
+  * complex errors handlers and split in logic
   *
   * @tparam T
   * @tparam W

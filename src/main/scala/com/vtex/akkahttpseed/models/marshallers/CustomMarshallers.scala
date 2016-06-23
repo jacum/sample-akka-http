@@ -6,7 +6,7 @@ import com.vtex.akkahttpseed.models.forms.GetQuoteModel
 import com.vtex.akkahttpseed.models.response.QueueMessage
 import spray.json.DefaultJsonProtocol
 
-object Implicits extends SprayJsonSupport with DefaultJsonProtocol {
+object CustomMarshallers extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val getQuoteFormats = jsonFormat4(GetQuoteModel)
   implicit val datasetFormats = jsonFormat1(DatasetData)

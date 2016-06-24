@@ -9,7 +9,7 @@ import akka.http.scaladsl.server._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.typesafe.config.ConfigFactory
 import com.vtex.akkahttpseed.actors.{MessageWorker, QueueConnector, StockPriceConnector}
-import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
+import com.vtex.akkahttpseed.models.errors.{ExternalResourceException, ExternalResourceNotFoundException}
 import com.vtex.akkahttpseed.routes.{MonitoringRoutes, QueueRoutes}
 
 object AkkaHttpScalaDockerSeed extends App {
@@ -44,17 +44,25 @@ object AkkaHttpScalaDockerSeed extends App {
   Http().bindAndHandle(allRoutes, "0.0.0.0", 5000)
 
 
-
+  // When handling and completing errors as result like that
+  // you have the option (like bellow) to not log errors
+  // or log with a lower level when a failure is usually
+  // caused is the user calling the API
   def customGlobalErrorHandler() = ExceptionHandler {
     case ex: ExternalResourceNotFoundException =>
       extractUri { uri =>
+        // no errors will be logged here
         complete(HttpResponse(NotFound, entity = ex.message))
       }
-    case ex =>
-      val all = ex
-      complete(ex)
-  }
+    case ex: ExternalResourceException => {
+      // a WARN will be logged instead of an error
+      system.log.warning(ex.message)
+      complete(HttpResponse(BadGateway, entity = ex.message))
+    }
 
+    // This behave as a pipeline, errors that are not handled above will be passed forward up to the route
+    // default is always log the error with InternalServerError and no body
+  }
 
 
 }

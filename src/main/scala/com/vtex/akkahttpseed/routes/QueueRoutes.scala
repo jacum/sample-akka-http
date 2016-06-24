@@ -7,11 +7,9 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
-import com.vtex.akkahttpseed.models.DailyQuoteResult
+import com.vtex.akkahttpseed.models.{DailyQuoteResult, GetQuoteModel, QueueMessage}
 import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
-import com.vtex.akkahttpseed.models.forms.GetQuoteModel
 import com.vtex.akkahttpseed.models.marshallers.CustomMarshallers._
-import com.vtex.akkahttpseed.models.response.QueueMessage
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}

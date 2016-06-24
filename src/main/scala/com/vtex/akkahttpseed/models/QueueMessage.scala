@@ -1,3 +1,3 @@
-package com.vtex.akkahttpseed.models.response
+package com.vtex.akkahttpseed.models
 
 case class QueueMessage(messageId: String, body: Option[String])

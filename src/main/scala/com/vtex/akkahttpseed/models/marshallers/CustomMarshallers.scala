@@ -1,9 +1,7 @@
 package com.vtex.akkahttpseed.models.marshallers
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vtex.akkahttpseed.models.{DailyQuoteResult, DatasetData}
-import com.vtex.akkahttpseed.models.forms.GetQuoteModel
-import com.vtex.akkahttpseed.models.response.QueueMessage
+import com.vtex.akkahttpseed.models.{DailyQuoteResult, DatasetData, GetQuoteModel, QueueMessage}
 import spray.json.DefaultJsonProtocol
 
 object CustomMarshallers extends SprayJsonSupport with DefaultJsonProtocol {

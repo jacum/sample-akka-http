@@ -5,7 +5,7 @@ import akka.pattern.pipe
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.amazonaws.services.sqs.model._
 import com.vtex.akkahttpseed.actors.QueueConnector._
-import com.vtex.akkahttpseed.models.response.QueueMessage
+import com.vtex.akkahttpseed.models.QueueMessage
 import com.vtex.akkahttpseed.utils.aws.AWSAsyncHandler
 
 import scala.collection.JavaConverters._

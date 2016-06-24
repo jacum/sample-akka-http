@@ -1,4 +1,4 @@
-package com.vtex.akkahttpseed.utils.aws
+package com.vtex.akkahttpseed.utils
 
 import akka.event.LoggingAdapter
 import com.amazonaws.AmazonWebServiceRequest

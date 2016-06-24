@@ -9,7 +9,7 @@ import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.{DailyQuoteResult, GetQuoteModel, QueueMessage}
 import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
-import com.vtex.akkahttpseed.models.marshallers.CustomMarshallers._
+import com.vtex.akkahttpseed.utils.CustomMarshallers._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -20,29 +20,25 @@ class QueueRoutes(queueConnector: ActorRef, stockPriceConnector: ActorRef)
   implicit val timeout = Timeout(10.seconds)
 
   def routes: Route = {
-    path("writeToQueue") {
-      post {
-        entity(as[GetQuoteModel]) { formModel =>
-          complete {
-            sendMessage(formModel)
-          }
-        }
-      }
-    } ~
-      path("readFromQueue" / IntNumber) { limit =>
-        get {
-          complete {
-            receiveMessages(limit)
+    pathPrefix("queue") {
+      path("stock") {
+        post {
+          entity(as[GetQuoteModel]) { formModel =>
+            complete {
+              sendMessage(formModel)
+            }
           }
         }
       } ~
-      path("readFromQueue") {
-        get {
-          complete {
-            receiveMessages(10)
+        parameter('limit.as[Int]) { limit =>
+          get {
+            complete {
+              receiveMessages(limit)
+            }
           }
         }
-      }
+    }
+
   }
 
 

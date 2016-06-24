@@ -9,7 +9,7 @@ import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.errors.ExternalResourceException
-import com.vtex.akkahttpseed.models.marshallers.CustomMarshallers._
+import com.vtex.akkahttpseed.utils.CustomMarshallers._
 
 import scala.concurrent.Future
 

@@ -5,32 +5,6 @@ Sample akka-http seed project, ready for packaging with docker.
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7d91311bacdf7872c884)
 
-## Structure
-
-- `src/main/resources`: configuration files 
-
-- `src/main/scala/com/vtex/akkahttpseed/actors`: actor classes
- 
-- `src/main/scala/com/vtex/akkahttpseed/models`: case classes and objects
-used for many reasons such as for request validation, response formats and
-marshalling (converting classes and objects to/from serialized formats, such
-as json).
-
-- `src/main/scala/com/vtex/akkahttpseed/routes`: classes that define routes
-(i.e. what paths and methods trigger which operations) and call whatever
-resources (actor operations, web services, etc) they need to complete their
-tasks.
-
-- `src/main/scala/com/vtex/akkahttpseed/utils`: utils directory contains 
-code that is generic enough so as to be used in other projects.
-
-- `src/main/scala/com/vtex/akkahttpseed/AkkaHttpScalaDockerSeed.scala`: this
-file can be thought of as a "main" method. Here the actor system is started, 
-others actors are started too and all routes are merged.
-
-- `src/test`: test classes
-
-
 ## Prerequisites
 
 - Git
@@ -101,3 +75,28 @@ You'll need to change some configuration in `src/main/resources/application.conf
 This application uses [sbt-native-packager](https://github.com/sbt/sbt-native-packager) which provides a docker plugin to package sbt projects.
 
 Just run `sbt docker:publishLocal` at your project root.
+
+## Structure
+
+- `src/main/resources`: configuration files 
+
+- `src/main/scala/com/vtex/akkahttpseed/actors`: actor classes
+ 
+- `src/main/scala/com/vtex/akkahttpseed/models`: case classes and objects
+used for many reasons such as for request validation, response formats and
+marshalling (converting classes and objects to/from serialized formats, such
+as json).
+
+- `src/main/scala/com/vtex/akkahttpseed/routes`: classes that define routes
+(i.e. what paths and methods trigger which operations) and call whatever
+resources (actor operations, web services, etc) they need to complete their
+tasks.
+
+- `src/main/scala/com/vtex/akkahttpseed/utils`: utils directory contains 
+code that is generic enough so as to be used in other projects.
+
+- `src/main/scala/com/vtex/akkahttpseed/AkkaHttpScalaDockerSeed.scala`: this
+file can be thought of as a "main" method. Here the actor system is started, 
+others actors are started too and all routes are merged.
+
+- `src/test`: test classes

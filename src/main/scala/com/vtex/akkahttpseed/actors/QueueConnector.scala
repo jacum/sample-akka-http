@@ -16,12 +16,12 @@ import scala.util.{Failure, Success}
 /**
   * Companion object for the Actor
   *
-  * props is the actor factory that is safer to be here to not get in serialization and race issues
-  * since actors creations are async and with location transparency
+  * props is an actor factory; it is located here to avoid serialization and race issues
+  * since actor creation is async and with location transparent
   *
-  * case object / case class are messages that this actor can handle
+  * case objects / case classes are messages that this actor can handle
   *
-  * This structure follow the Akka Recommended Practices for Actors
+  * This structure follows the Akka Recommended Practices for Actors
   * http://doc.akka.io/docs/akka/current/scala/actors.html#Recommended_Practices
   *
   */
@@ -54,8 +54,8 @@ object QueueConnector {
   * For a more complex state flow, you can you can use Akka FSM (Finite State Machine), Not used in this example.
   * http://doc.akka.io/docs/akka/current/scala/fsm.html
   *
-  * The initialization of this Actor depends of an async call that can take time to become initialized.
-  * No messages are lost during the uninitialized state. This is done using Stash
+  * The initialization of this Actor depends on an async call that can take time to initialize.
+  * No messages are lost during the uninitialized state, because of stashing
   * http://doc.akka.io/docs/akka/current/scala/actors.html#Stash
   *
   * @param queueName
@@ -65,9 +65,10 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
 
   import context.dispatcher
 
+  // the `log` variable is provided by the `ActorLogging` trait
   implicit val logging = log
 
-  val retryInitDelay = 10 seconds
+  val retryInitDelay = 10.seconds
 
   // var is mutable , val is immutable
   // This client is mutable because extract the current available credentials on creation.
@@ -83,6 +84,7 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
   /**
     * Uninitialized state, actor is not immediately ready because of async operations.
     * All unexpected messages in this state will be stashed to be processed later when the Actor is initialized.
+    *
     * More at: http://doc.akka.io/docs/akka/current/scala/actors.html#Stash
     *
     * @return
@@ -90,58 +92,30 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
   private def uninitialized: Receive = {
 
     // You cannot use objects with a live connection inside a message between actors (sqsClient) because
-    // all messages are serialized and the connection will be lost, for this reason sqsClient is available class in scope
-    case CompleteInitialize(queueUrl) =>
+    // these are not serializable; for this reason sqsClient is available as a mutable variable (var rather
+    // than val)
+    case CompleteInitialize(queueUrl) => {
 
-      // Change state is safe here (message processing), but never inside a Future because of racing conditions
+      // Changing state here is safe (because it's being done via message passing), but NOT
+      // inside a Future because of the possibility of racing conditions
+      //
       // http://doc.akka.io/docs/akka/current/general/jmm.html#Actors_and_shared_mutable_state
 
       unstashAll()
       context.become(initialized(queueUrl))
       log.info("initialized, messages unstashed")
+    }
+    case TryInitialize => tryInitQueueURL()
 
-    case TryInitialize =>
-      tryInitQueueURL()
-
-    case _ =>
+    case _ => {
+      // stash() saves messages for future processing
       stash()
       log.info("Message saved to Stash to be processed when the actor state is initialized")
-  }
-
-  /** *
-    * The resolve of Queue URL is done asynchronously just to illustrate an async initialization behavior.
-    * You can use a static url without this call.
-    */
-  def tryInitQueueURL() {
-
-    sqsClient = new AmazonSQSAsyncClient()
-
-    // Read more about the custom AWSAsyncHandler inside it´s source code.
-    val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
-    sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
-    queueUrlResult.future.onComplete {
-
-      case Success((request, result)) =>
-
-        // WARNING, Never change any state of the actor inside a Future because of race conditions.
-        // The state change need to be done inside the message processing, in this case within the
-        // "CompleteInitialize" message handling
-        // http://doc.akka.io/docs/akka/current/general/jmm.html#Actors_and_shared_mutable_state
-
-        self ! CompleteInitialize(result.getQueueUrl)
-
-      // actor can´t continue if it is unable to initialize, but it will retry later
-      case Failure(ex) =>
-        log.warning("Initializtion error, retry in {}", retryInitDelay)
-        context.system.scheduler.scheduleOnce(retryInitDelay, self, TryInitialize)
-
     }
-
   }
-
 
   /**
-    * In the `initialized` state, this actor only respond to queue messages (SendMessage, ReceiveMessages) in this state
+    * In the `initialized` state, this actor only responds to queue messages (SendMessage, ReceiveMessages) in this state
     *
     * @param queueUrl
     * @return
@@ -166,6 +140,41 @@ class QueueConnector(val queueName: String) extends Actor with ActorLogging with
     }
 
   }
+
+  /** *
+    * Resolution of the Queue URL is done asynchronously to illustrate an async initialization behavior.
+    * You can use a static url without this call.
+    */
+  def tryInitQueueURL() {
+
+    sqsClient = new AmazonSQSAsyncClient()
+
+    // Read more about the custom AWSAsyncHandler inside its source code.
+    val queueUrlResult = new AWSAsyncHandler[GetQueueUrlRequest, GetQueueUrlResult]()
+    sqsClient.getQueueUrlAsync(queueName, queueUrlResult)
+    queueUrlResult.future.onComplete {
+
+      case Success((request, result)) => {
+
+        // WARNING, Never change any state of the actor inside a Future because of race conditions.
+        // State changes need to be done via message processing, in this case within the
+        // "CompleteInitialize" message handler
+        //
+        // http://doc.akka.io/docs/akka/current/general/jmm.html#Actors_and_shared_mutable_state
+
+        self ! CompleteInitialize(result.getQueueUrl)
+
+        // actor can´t continue if it is unable to initialize; it will retry later
+      }
+      case Failure(ex) => {
+        log.warning("Initialization error, retry in {}", retryInitDelay)
+        context.system.scheduler.scheduleOnce(retryInitDelay, self, TryInitialize)
+      }
+
+    }
+
+  }
+
 
   private def sendMessageToQueue(queueUrl: String, message: String): Future[SendMessageResultContainer] = {
     val sendResult = new AWSAsyncHandler[SendMessageRequest, SendMessageResult]()

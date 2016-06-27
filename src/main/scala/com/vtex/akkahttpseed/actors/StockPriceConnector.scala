@@ -9,7 +9,8 @@ import akka.pattern.pipe
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.vtex.akkahttpseed.models.DailyQuoteResult
 import com.vtex.akkahttpseed.models.errors.ExternalResourceException
-import com.vtex.akkahttpseed.utils.CustomMarshallers._
+import com.vtex.akkahttpseed.models.marshalling.CustomMarshallers
+import CustomMarshallers._
 
 import scala.concurrent.Future
 
@@ -17,12 +18,12 @@ import scala.concurrent.Future
 /**
   * Companion object for the Actor
   *
-  * props is the actor factory that is safer to be here to not get in race conditions and serialization issues
-  * since actors creations are async
+  * props is an actor factory; it is located here to avoid serialization and race issues
+  * since actor creation is async and with location transparent
   *
-  * case object / case class are messages that this actor can handle
+  * case objects / case classes are messages that this actor can handle
   *
-  * This structure follow the Akka Recommended Practices for Actors
+  * This structure follows the Akka Recommended Practices for Actors
   * http://doc.akka.io/docs/akka/current/scala/actors.html#Recommended_Practices
   *
   */
@@ -61,11 +62,13 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
       "column_index" -> "4",
       "api_key" -> apiKey)
 
-
     val fullUri = Uri(baseUri).withQuery(query)
+
     log.info("calling {}", fullUri.toString())
+
     val req = HttpRequest(method = HttpMethods.GET, uri = fullUri)
     val response = Http().singleRequest(req)
+
     val output: Future[Option[DailyQuoteResult]] = response.flatMap {
       case resp =>
         resp.status match {

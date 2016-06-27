@@ -1,4 +1,4 @@
-package com.vtex.akkahttpseed.utils
+package com.vtex.akkahttpseed.models.marshalling
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vtex.akkahttpseed.models.{DailyQuoteResult, DatasetData, GetQuoteModel, QueueMessage}

@@ -32,23 +32,22 @@ object AkkaHttpScalaDockerSeed extends App {
   val queueRoutes = new QueueRoutes(queueConnector, stockPriceConnector)
   val monitoringRoutes = new MonitoringRoutes()
 
+  // implicit exception handler - this will be picked up by the route definitions
   implicit def myExceptionHandler: ExceptionHandler = customGlobalErrorHandler
-
 
   // merge all routes here
   def allRoutes = {
     queueRoutes.routes ~
-      monitoringRoutes.routes
+    monitoringRoutes.routes
   }
 
   Http().bindAndHandle(allRoutes, "0.0.0.0", 5000)
 
 
-  // When handling and completing errors as result like that
-  // you have the option (like bellow) to not log errors
-  // or log with a lower level when a failure is usually
-  // caused is the user calling the API
-  def customGlobalErrorHandler() = ExceptionHandler {
+  // When handling and completing errors as results like this
+  // you have the option (see bellow) of not logging errors or log with a lower level when
+  // failures are caused by the user (not the system itself)
+  def customGlobalErrorHandler = ExceptionHandler {
     case ex: ExternalResourceNotFoundException =>
       extractUri { uri =>
         // no errors will be logged here
@@ -60,8 +59,9 @@ object AkkaHttpScalaDockerSeed extends App {
       complete(HttpResponse(BadGateway, entity = ex.message))
     }
 
-    // This behave as a pipeline, errors that are not handled above will be passed forward up to the route
-    // default is always log the error with InternalServerError and no body
+    // This behaves as a pipeline; errors that are not handled above will be passed on (bubble up)
+    // up to the route.
+    // The default behaviour is to log the error and return a InternalServerError and no body
   }
 
 

@@ -9,7 +9,7 @@ Sample akka-http seed project, ready for packaging with docker.
 
 - Git
 
-- Docker (optional)
+- Docker **(optional)**
 
   Download at [https://docs.docker.com/engine/installation/](https://docs.docker.com/engine/installation/)
 
@@ -36,9 +36,36 @@ Sample akka-http seed project, ready for packaging with docker.
 
   Download at [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
-- A REST API client
+- REST API client
 
-  We suggest Postman. [Chrome-plugin](https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?hl=en)
+  We recommend Postman. [Chrome-plugin](https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?hl=en)
+
+## Structure
+
+- `src/main/resources`: configuration files 
+
+- `src/main/scala/com/vtex/akkahttpseed/actors`: actor classes
+ 
+- `src/main/scala/com/vtex/akkahttpseed/models`: case classes and objects used for many reasons such as for request validation, response formats and marshalling (converting classes and objects to/from serialized formats, such as json).
+
+- `src/main/scala/com/vtex/akkahttpseed/routes`: classes that define routes (i.e. what paths and methods trigger which operations) and call whatever resources (actor operations, web services, etc) they need to complete their tasks.
+
+- `src/main/scala/com/vtex/akkahttpseed/utils`: utils directory contains code that is generic enough so as to be used in other projects.
+
+- `src/main/scala/com/vtex/akkahttpseed/AkkaHttpScalaDockerSeed.scala`: this file can be thought of as a "main" method. Here the actor system is started, others actors are started too and all routes are merged.
+
+- `src/test`: test classes
+
+## Behaviour
+
+This sample app uses akka-http to expose operations that write and read to/from an AWS SQS queue. 
+
+In addition, a worker is started off when you start the application. 
+
+The worker will periodically (every 10 seconds) write sample messages to the queue. 
+
+This means that, when you read from the queue, chances are you will see messages sent automatically by the worker (as well as the ones you've manually sent using the write operation)
+
 
 ## Installation & Running
 
@@ -70,37 +97,25 @@ You'll need to change some configuration in `src/main/resources/application.conf
 - the api key for using the stock quote API (use what's been given to you or get a new one at [https://www.quandl.com/users/login](https://www.quandl.com/users/login))
 - the message that you want the automatic worker to write to the aforementioned queue
 
-### Docker packaging
+#### Docker packaging
 
 This application uses [sbt-native-packager](https://github.com/sbt/sbt-native-packager) which provides a docker plugin to package sbt projects.
 
 Just run `sbt docker:publishLocal` at your project root.
 
-## Structure
+#### Run docker container
 
-- `src/main/resources`: configuration files 
+> If you're not running linux, replace `~/.aws` with the path to the AWS configuration directory
 
-- `src/main/scala/com/vtex/akkahttpseed/actors`: actor classes
- 
-- `src/main/scala/com/vtex/akkahttpseed/models`: case classes and objects used for many reasons such as for request validation, response formats and marshalling (converting classes and objects to/from serialized formats, such as json).
+After packaging the app as per the previous step, run `$ docker ps --latest` to see its name.
 
-- `src/main/scala/com/vtex/akkahttpseed/routes`: classes that define routes (i.e. what paths and methods trigger which operations) and call whatever resources (actor operations, web services, etc) they need to complete their tasks.
+You should see a name like `sample-project/akka-http-docker-seed:17fb541d99b587241d22f86d4170f65e6c40f9e1` (your exact values will be different)
 
-- `src/main/scala/com/vtex/akkahttpseed/utils`: utils directory contains code that is generic enough so as to be used in other projects.
+To run the container containing your app, run the following command, while replacing the image name (as above) with your own value:
 
-- `src/main/scala/com/vtex/akkahttpseed/AkkaHttpScalaDockerSeed.scala`: this file can be thought of as a "main" method. Here the actor system is started, others actors are started too and all routes are merged.
+`$ docker run -dit -v ~/.aws:/usr/sbin/.aws -p 5000:5000 sample-project/akka-http-docker-seed:17fb541d99b587241d22f86d4170f65e6c40f9e1`
 
-- `src/test`: test classes
-
-## Behaviour
-
-This sample app uses akka-http to expose operations that write and read to/from an AWS SQS queue. 
-
-In addition, a worker is started off when you start the application. 
-
-The worker will periodically (every 10 seconds) write sample messages to the queue. 
-
-This means that, when you read from the queue, chances are you will see messages sent automatically by the worker (as well as the ones you've manually sent using the write operation)
+Test your application by opening *http://localhost:5000/healthcheck* on a web browser.
 
 ### See also
 

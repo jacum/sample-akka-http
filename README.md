@@ -9,7 +9,7 @@ Sample akka-http seed project, ready for packaging with docker.
 
 - Git
 
-- Docker
+- Docker (optional)
 
   Download at [https://docs.docker.com/engine/installation/](https://docs.docker.com/engine/installation/)
 

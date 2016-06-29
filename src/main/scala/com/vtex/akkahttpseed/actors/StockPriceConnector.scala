@@ -54,7 +54,8 @@ class StockPriceConnector(apiKey: String) extends Actor with ActorLogging {
 
     val baseUri = s"https://www.quandl.com/api/v3/datasets/WIKI/$ticker.json"
 
-    val query = Query(
+    // Query creates query string params
+    val query: Query = Query(
       "order" -> "asc",
       "exclude_column_names" -> "true",
       "start_date" -> s"$year-$month-$day",

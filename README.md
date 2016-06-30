@@ -16,6 +16,12 @@ Sample akka-http seed project, ready for packaging with docker.
 - Java 8 SDK
 
   Download at  [Java SE Development Kit 8 Downloads](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+  
+- Scala 2.11.x SDK
+
+  Download at  [http://www.scala-lang.org/download](http://www.scala-lang.org/download/)
+  
+  http://www.scala-lang.org/download/
 
 - SBT (Scala Build Tool)
  

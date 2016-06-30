@@ -118,4 +118,9 @@ Test your application by opening *http://localhost:5000/healthcheck* on a web br
 
 ### See also
 
+#### Useful links
+[Akka and Scala running samples from Lightbend Activator](https://www.lightbend.com/activator/download)
+[The Reactive Manifesto](http://www.reactivemanifesto.org/)
+
+#### Feedback
 Send feedback to `felipe.almeida@vtex.com.br` or `wellfabr@vtex.com.br`

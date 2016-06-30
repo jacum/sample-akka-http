@@ -9,8 +9,7 @@ import com.vtex.akkahttpseed.actors.QueueConnector.SendMessageResultContainer
 import com.vtex.akkahttpseed.actors.{QueueConnector, StockPriceConnector}
 import com.vtex.akkahttpseed.models.{DailyQuoteResult, GetQuoteModel, QueueMessage}
 import com.vtex.akkahttpseed.models.errors.ExternalResourceNotFoundException
-import com.vtex.akkahttpseed.models.marshalling.CustomMarshallers
-import CustomMarshallers._
+import com.vtex.akkahttpseed.models.marshalling.CustomMarshallers._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}

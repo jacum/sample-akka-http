@@ -13,16 +13,9 @@ Sample akka-http seed project, ready for packaging with docker.
 
   Download at [https://docs.docker.com/engine/installation/](https://docs.docker.com/engine/installation/)
 
-- Java 8
+- Java 8 SDK
 
-  Upon running `java -version` you should see something like this:
- 
-  ```
-  $ java -version
-  java version "1.8.0_74"
-  Java(TM) SE Runtime Environment (build 1.8.0_74-b02)
-  Java HotSpot(TM) 64-Bit Server VM (build 25.74-b02, mixed mode)
-  ```
+  Download at  [Java SE Development Kit 8 Downloads](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 - SBT (Scala Build Tool)
  

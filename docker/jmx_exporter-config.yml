@@ -1,0 +1,9 @@
+startDelaySeconds: 0
+hostPort: 127.0.0.1:9013
+ssl: false
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+#whitelistObjectNames: ["org.apache.cassandra.metrics:*"]
+#blacklistObjectNames: ["org.apache.cassandra.metrics:type=ColumnFamily,*"]
+rules:
+  - pattern: ".*"

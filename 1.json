@@ -1,0 +1,177 @@
+{
+  "apps": [
+    {
+      "id": "/service-a",
+      "backoffFactor": 1.15,
+      "backoffSeconds": 1,
+      "constraints": [
+        [
+          "hostname",
+          "UNIQUE"
+        ]
+      ],
+      "container": {
+        "type": "DOCKER",
+        "docker": {
+          "forcePullImage": true,
+          "image": "jacum/example-service",
+          "parameters": [
+            {
+              "key": "log-driver",
+              "value": "syslog"
+            }
+          ],
+          "privileged": false
+        },
+        "volumes": [],
+        "portMappings": [
+          {
+            "containerPort": 9000,
+            "hostPort": 0,
+            "labels": {},
+            "protocol": "tcp",
+            "servicePort": 9000
+          },
+          {
+            "containerPort": 9101,
+            "hostPort": 0,
+            "labels": {
+              "prometheusPath": "/metrics"
+            },
+            "protocol": "tcp",
+            "servicePort": 9101
+          }
+        ]
+      },
+      "cpus": 0.2,
+      "disk": 0,
+      "env": {
+        "LOG_DIR": "/var/log"
+      },
+      "executor": "",
+      "healthChecks": [
+        {
+          "gracePeriodSeconds": 30,
+          "ignoreHttp1xx": false,
+          "intervalSeconds": 10,
+          "maxConsecutiveFailures": 3,
+          "path": "/health/check",
+          "portIndex": 0,
+          "protocol": "HTTP",
+          "ipProtocol": "IPv4",
+          "timeoutSeconds": 10,
+          "delaySeconds": 15
+        }
+      ],
+      "instances": 4,
+      "labels": {},
+      "maxLaunchDelaySeconds": 3600,
+      "mem": 256,
+      "gpus": 0,
+      "networks": [
+        {
+          "mode": "container/bridge"
+        }
+      ],
+      "requirePorts": false,
+      "upgradeStrategy": {
+        "maximumOverCapacity": 0,
+        "minimumHealthCapacity": 0.5
+      },
+      "version": "2018-05-04T20:15:29.906Z",
+      "versionInfo": {
+        "lastScalingAt": "2018-05-04T20:15:29.906Z",
+        "lastConfigChangeAt": "2018-05-04T20:15:29.906Z"
+      },
+      "killSelection": "YOUNGEST_FIRST",
+      "unreachableStrategy": {
+        "inactiveAfterSeconds": 0,
+        "expungeAfterSeconds": 0
+      },
+      "tasksStaged": 0,
+      "tasksRunning": 4,
+      "tasksHealthy": 4,
+      "tasksUnhealthy": 0,
+      "deployments": []
+    },
+    {
+      "id": "/service-d",
+      "backoffFactor": 1.15,
+      "backoffSeconds": 1,
+      "constraints": [
+        [
+          "hostname",
+          "UNIQUE"
+        ]
+      ],
+      "container": {
+        "type": "DOCKER",
+        "docker": {
+          "forcePullImage": true,
+          "image": "jacum/example-service",
+          "parameters": [
+            {
+              "key": "log-driver",
+              "value": "syslog"
+            }
+          ],
+          "privileged": false
+        },
+        "volumes": [],
+        "portMappings": [
+          {
+            "containerPort": 9000,
+            "labels": {},
+            "protocol": "tcp",
+            "servicePort": 9000
+          },
+          {
+            "containerPort": 9101,
+            "labels": {
+              "prometheusPath": "/metrics"
+            },
+            "protocol": "tcp",
+            "servicePort": 9101
+          }
+        ]
+      },
+      "cpus": 0.1,
+      "disk": 0,
+      "env": {
+        "LOG_DIR": "/var/log"
+      },
+      "executor": "",
+      "instances": 3,
+      "labels": {},
+      "maxLaunchDelaySeconds": 3600,
+      "mem": 256,
+      "gpus": 0,
+      "networks": [
+        {
+          "name": "netServiceD",
+          "mode": "container"
+        }
+      ],
+      "requirePorts": false,
+      "upgradeStrategy": {
+        "maximumOverCapacity": 0,
+        "minimumHealthCapacity": 0.5
+      },
+      "version": "2018-05-10T19:36:59.095Z",
+      "versionInfo": {
+        "lastScalingAt": "2018-05-10T19:36:59.095Z",
+        "lastConfigChangeAt": "2018-05-10T19:36:59.095Z"
+      },
+      "killSelection": "YOUNGEST_FIRST",
+      "unreachableStrategy": {
+        "inactiveAfterSeconds": 0,
+        "expungeAfterSeconds": 0
+      },
+      "tasksStaged": 0,
+      "tasksRunning": 3,
+      "tasksHealthy": 0,
+      "tasksUnhealthy": 0,
+      "deployments": []
+    }
+  ]
+}

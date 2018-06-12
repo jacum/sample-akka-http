@@ -1,0 +1,71 @@
+#!/bin/bash
+IMAGE=$1
+
+if [ -z "$IMAGE" ]; then
+    echo -e "[ERROR] Please pass a image name git as argument to deploy version"
+    exit 1
+fi
+
+echo -e "\n===== [ACCEPT] Deploy example service to Marathon =====" &&
+echo -e "\n===== [VERSION] $1 =====" &&
+curl -i \
+-H "Accept: application/json" \
+-H "Content-Type:application/json" \
+-H "Authorization: Basic YWRtaW46Y29tZW9ubGV0bWVpbg==" \
+-X PUT --data '{
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "forcePullImage": true,
+      "image": "'"$IMAGE"'",
+      "network": "USER",
+      "parameters": [
+        { "key": "log-driver", "value": "syslog" }
+      ]
+    },
+    "portMappings": [
+      {
+        "containerPort": 9000,
+        "servicePort": 9000,
+        "protocol": "tcp"
+      },
+      {
+        "containerPort": 9101,
+        "servicePort": 9101,
+        "protocol": "tcp",
+        "labels" : {
+          "prometheusPath" : "/metrics"
+        }
+      }
+    ]
+  },
+  "ipAddress": {
+    "networkName": "netServiceD"
+  },
+  "id": "service-d",
+  "instances": 3,
+  "cpus": 0.1,
+  "mem": 256,
+  "env": {
+    "LOG_DIR" : "/var/log"
+  },
+  "constraints": [["hostname", "UNIQUE"]],
+  "upgradeStrategy": {
+    "minimumHealthCapacity": 0.5,
+    "maximumOverCapacity": 0
+  }
+}' "http://cluster.jacum.com:8080/v2/apps/service-d"
+
+echo -e "\n===== DONE ====="
+
+#"healthChecks": [
+#    {
+#      "protocol": "HTTP",
+#      "path": "/health/check",
+#      "portIndex": 0,
+#      "gracePeriodSeconds": 30,
+#      "intervalSeconds": 10,
+#      "timeoutSeconds": 10,
+#      "maxConsecutiveFailures": 3
+#    }
+#  ]
